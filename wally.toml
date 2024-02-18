@@ -1,0 +1,14 @@
+[package]
+name = "rodrick160/uservault"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+private = false
+
+include = ["wally.toml", "UserVault.lua", "LICENSE"]
+
+[dependencies]
+UserVaultController = "rodrick160/uservaultcontroller@0.1.0"
+
+[server-dependencies]
+UserVaultService = "rodrick160/uservaultservice@0.1.0"
