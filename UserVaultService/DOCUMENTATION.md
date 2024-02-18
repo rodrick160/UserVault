@@ -1,5 +1,16 @@
 # UserVaultService Documentation
 
+- [GetPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#getplayerdata)
+- [SetPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#setplayerdata)
+- [UpdatePlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#updateplayerdata)
+- [IncrementPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#incrementplayerdata)
+- [GetDataChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#getdatachangedsignal)
+- [BindPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#bindplayerdata)
+- [OnHopReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#onhopready)
+- [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#releaseprofile)
+- [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#resetprofile)
+- [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#start)
+
 ## GetPlayerData
 
 ### Description
