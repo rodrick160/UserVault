@@ -6,7 +6,7 @@
 - [IncrementPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#incrementplayerdata)
 - [GetDataChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#getdatachangedsignal)
 - [BindPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#bindplayerdata)
-- [OnHopReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#onhopready)
+- [OnHopClear](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#onhopclear)
 - [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#releaseprofile)
 - [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#resetprofile)
 - [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#start)
