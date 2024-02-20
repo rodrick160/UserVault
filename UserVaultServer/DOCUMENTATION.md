@@ -1,4 +1,4 @@
-# UserVaultSerer Documentation
+# UserVaultServer Documentation
 
 - [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvalue)
 - [SetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#setvalue)
