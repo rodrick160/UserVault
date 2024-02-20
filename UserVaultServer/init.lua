@@ -90,7 +90,7 @@ local dataChangedRemoteSignal
 local function debugPrint(level: number, ...: any...)
 	if level > currentConfig.VerboseLevel then return end
 
-	local scriptName, lineNumber = debug.info(coroutine.running(), 1, "sl")
+	local scriptName, lineNumber = debug.info(coroutine.running(), 2, "sl")
 	scriptName = scriptName:match("%w+$")
 
 	print(`[{scriptName}: {lineNumber}]:\n`, ...)
@@ -398,7 +398,8 @@ function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promi
 	debugPrint(3, `Getting values for {player}:`, ...)
 	local args = {...}
 
-	local keys = if typeof(args[1]) == "table" then args[1] else args
+	local isTable = typeof(args[1]) == "table"
+	local keys = if isTable then args[1] else args
 	return Promise.new(function(resolve, reject)
 		debugPrint(5, `Waiting for player data`)
 		waitForPlayerLoaded(player)
@@ -406,10 +407,16 @@ function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promi
 		local playerCache = playerCaches[player]
 		if playerCache and playerCache.Profile:IsActive() then
 			debugPrint(5, `Player data found`)
-			local values = Promise.each(keys, function(key)
-				return getValue(playerCache, key)
-			end)
-			if typeof(args[1]) == "table" then
+			local values = {}
+			for _, key in keys do
+				local value = getValue(playerCache, key):expect()
+				if isTable then
+					values[key] = value
+				else
+					values[#values + 1] = value
+				end
+			end
+			if isTable then
 				debugPrint(5, `Returning table`)
 				resolve(values)
 			else

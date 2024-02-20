@@ -50,7 +50,7 @@ type UserVaultConfig = {
 type Computed<T> = Fusion2.Computed<T> | Fusion3.Computed<T>
 type Value<T> = Fusion2.Value<T> | Fusion3.Value<T>
 
-type Promise = Promise.Promise
+type Promise = typeof(Promise)
 
 type Signal = Signal.Signal
 
@@ -74,7 +74,7 @@ local started = false
 local function debugPrint(level: number, ...: any...)
 	if level > currentConfig.VerboseLevel then return end
 
-	local scriptName, lineNumber = debug.info(coroutine.running(), 1, "sl")
+	local scriptName, lineNumber = debug.info(coroutine.running(), 2, "sl")
 	scriptName = scriptName:match("%w+$")
 
 	print(`[{scriptName}: {lineNumber}]:\n`, ...)
@@ -222,16 +222,21 @@ function UserVaultClient.GetValue(...: {string} | string): Promise
 	debugPrint(2, `Getting values:`, ...)
 	local args = {...}
 
-	local keys = if typeof(args[1]) == "table" then args[1] else args
+	local isTable = typeof(args[1]) == "table"
+	local keys = if isTable then args[1] else args
 	return Promise.new(function(resolve)
 		waitForDataReady()
 
 		local values = {}
 		for _, key in keys do
-			values[key] = data[key]
+			if isTable then
+				values[key] = data[key]
+			else
+				values[#values + 1] = data[key]
+			end
 		end
 
-		if typeof(args[1]) == "table" then
+		if isTable then
 			debugPrint(3, `Returning table`)
 			resolve(values)
 		else
@@ -325,10 +330,7 @@ function UserVaultClient.BindToValue(key: string, callback: (any) -> ())
 
 	UserVaultClient.GetValue(key)
 	:andThen(function(value)
-		UserVaultClient.GetValueChangedSignal(key)
-		:andThen(function(dataChangedSignal)
-			dataChangedSignal:Connect(callback)
-		end)
+		UserVaultClient.GetValueChangedSignal(key):Connect(callback)
 		callback(value)
 	end)
 end
@@ -427,6 +429,7 @@ function UserVaultClient.Start(config: UserVaultConfig)
 
 		debugPrint(1, `Player data ready`)
 		dataReadyValue:set(true)
+		dataReadySignal:Fire()
 	end)
 end
 
