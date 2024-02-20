@@ -19,12 +19,12 @@
 
 local RunService = game:GetService("RunService")
 
-local Comm = require(script.Parent.Comm).ServerComm
-local ProfileService = require(script.Parent.ProfileService)
-local Promise = require(script.Parent.Promise)
-local Signal = require(script.Parent.Signal)
-local TableUtil = require(script.Parent.TableUtil)
-local Trove = require(script.Parent.Trove)
+local Comm = require(script.Parent.Parent.Comm).ServerComm
+local ProfileService = require(script.Parent.Parent.ProfileService)
+local Promise = require(script.Parent.Parent.Promise)
+local Signal = require(script.Parent.Parent.Signal)
+local TableUtil = require(script.Parent.Parent.TableUtil)
+local Trove = require(script.Parent.Parent.Trove)
 
 --\\ Constants //--
 

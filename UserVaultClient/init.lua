@@ -22,12 +22,12 @@ if not RunService:IsClient() then
 	return {}
 end
 
-local Comm = require(script.Parent.Comm).ClientComm
-local Fusion2 = require(script.Parent.Fusion2)
-local Fusion3 = require(script.Parent.Fusion3)
-local Promise = require(script.Parent.Promise)
-local Signal = require(script.Parent.Signal)
-local TableUtil = require(script.Parent.TableUtil)
+local Comm = require(script.Parent.Parent.Comm).ClientComm
+local Fusion2 = require(script.Parent.Parent.Fusion2)
+local Fusion3 = require(script.Parent.Parent.Fusion3)
+local Promise = require(script.Parent.Parent.Promise)
+local Signal = require(script.Parent.Parent.Signal)
+local TableUtil = require(script.Parent.Parent.TableUtil)
 
 --\\ Constants //--
 
