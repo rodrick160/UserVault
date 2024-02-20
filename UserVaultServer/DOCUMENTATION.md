@@ -1,17 +1,17 @@
-# UserVaultService Documentation
+# UserVaultSerer Documentation
 
-- [GetPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#getplayerdata)
-- [SetPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#setplayerdata)
-- [UpdatePlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#updateplayerdata)
-- [IncrementPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#incrementplayerdata)
-- [GetDataChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#getdatachangedsignal)
-- [BindPlayerData](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#bindplayerdata)
-- [OnHopClear](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#onhopclear)
-- [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#releaseprofile)
-- [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#resetprofile)
-- [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultService/DOCUMENTATION.md#start)
+- [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvalue)
+- [SetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#setvalue)
+- [UpdateValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#updatevalue)
+- [IncrementValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#incrementvalue)
+- [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvaluechangedsignal)
+- [BindToValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#bindtovalue)
+- [OnHopClear](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#onhopclear)
+- [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#releaseprofile)
+- [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#resetprofile)
+- [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#start)
 
-## GetPlayerData
+## GetValue
 
 ### Description
 Retrieves specified data from the player's profile.
@@ -19,15 +19,15 @@ Retrieves specified data from the player's profile.
 ### Parameters
 This function supports three parameter formats:
 
-- `GetPlayerData(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
+- `GetValue(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
 	- `player: Player` - The target player.
 	- `keys: {string}` - The data keys to retrieve.
 
-- `GetPlayerData(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
+- `GetValue(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
 	- `player: Player` - The target player.
 	- `...: string` - The data keys to retrieve.
 
-- `GetPlayerData(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
+- `GetValue(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
 	- `player: Player` - The target player.
 
 ### Return Value
@@ -42,7 +42,7 @@ Returns a `Promise` that:
 Retrieve player data using an array of keys `"Coins"` and `"Level"`.
 The promise resolves with a dictionary containing the values for these keys.
 ```lua
-UserVaultService:GetPlayerData(player, {"Coins", "Level"}):andThen(function(data)
+UserVaultServer.GetValue(player, {"Coins", "Level"}):andThen(function(data)
 	print(`Player {player.DisplayName} has {data.Coins} coins and is level {data.Level}.`)
 end, function()
 	print(`Player {player.DisplayName}'s data failed to load!`)
@@ -53,14 +53,17 @@ end)
 Retrieve player data using varargs `"Coins"` and `"Level"`.
 The promise resolves with the values for these keys in order.
 ```lua
-UserVaultService:GetPlayerData(player, "Coins", "Level"):andThen(function(coins, level)
+UserVaultServer.GetValue(player, "Coins", "Level"):andThen(function(coins, level)
 	print(`Player {player.DisplayName} has {coins} coins and is level {level}.`)
 end, function()
 	print(`Player {player.DisplayName}'s data failed to load!`)
 end)
 ```
 
-## SetPlayerData
+> [!TIP]
+> GetValues() is a valid alias for GetValue()
+
+## SetValue
 
 ### Description
 Sets a specified value for a key in the player's profile.
@@ -77,14 +80,14 @@ Returns a `Promise` that:
 
 ### Usage Examples
 ```lua
-UserVaultService:SetPlayerData(player, "Coins", 500):andThen(function()
+UserVaultServer.SetValue(player, "Coins", 500):andThen(function()
 	print(`Successfully updated {player.DisplayName}'s coins to 500.`)
 end, function()
 	print(`Failed to update {player.DisplayName}'s coins to 500.`)
 end)
 ```
 
-## UpdatePlayerData
+## UpdateValue
 
 ### Description
 Updates a specified value for a key in the player's profile by applying a callback function.
@@ -111,7 +114,7 @@ Returns a `Promise` that:
 
 ### Usage Examples
 ```lua
-UserVaultService:UpdatePlayerData(player, "Coins", function(coins)
+UserVaultServer.UpdateValue(player, "Coins", function(coins)
 	return coins + 500
 end):andThen(function(newCoins)
 	print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
@@ -120,13 +123,13 @@ end, function()
 end)
 ```
 
-## IncrementPlayerData
+## IncrementValue
 
 ### Description
 Increments a specified value for a key in the player's profile by a specific amount.
 Sugar for:
 ```lua
-UserVaultService:UpdatePlayerData(player, key, function(value)
+UserVaultServer.UpdateValue(player, key, function(value)
 	return value + increment
 end)
 ```
@@ -144,14 +147,14 @@ This ensures that the calling code can immediately use the updated value.
 
 ### Usage Examples
 ```lua
-UserVaultService:IncrementPlayerData(player, "Coins", 500):andThen(function(newCoins)
+UserVaultServer.IncrementValue(player, "Coins", 500):andThen(function(newCoins)
 	print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
 end, function()
 	print(`Failed to update {player.DisplayName}'s coins.`)
 end)
 ```
 
-## GetDataChangedSignal
+## GetValueChangedSignal
 
 ### Description
 Creates and returns a `Signal` that is fired when a specified key's value changes in the player's profile.
@@ -169,7 +172,7 @@ The promise is rejected if the player's profile cannot be loaded.
 
 ### Usage Examples
 ```lua
-UserVaultService:GetDataChangedSignal(player, "Coins")
+UserVaultServer.GetValueChangedSignal(player, "Coins")
 :andThen(function(signal)
 	signal:Connect(function(newValue, oldValue)
 		print(`Player {player.DisplayName}'s coins changed from {oldValue} to {newValue}!`)
@@ -181,15 +184,15 @@ end)
 ```
 
 > [!NOTE]
-> The Signal is only available after the player's profile has been successfully loaded.
+> The `Signal` is only available after the player's profile has been successfully loaded.
 > It does not fire for the initial load of the profile's data.
-> For initial data handling, other methods like directly retrieving the player's data upon profile load should be considered.
+> For initial data handling, other methods like [`BindToValue()`](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#bindtovalue) should be considered.
 
-## BindPlayerData
+## BindToValue
 
 ### Description
 Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
-updates inthe player's profile.
+updates in the player's profile.
 
 ### Parameters
 - `player: Player` - The player whose data is being monitored.
@@ -205,7 +208,7 @@ Returns a `Promise` that:
 ### Usage Examples
 ```lua
 -- Bind to monitor and reflect changes in 'Coins' within the player's leaderstats.
-UserVaultService:BindPlayerData(player, "Coins", function(newValue, oldValue)
+UserVaultServer.BindToValue(player, "Coins", function(newValue, oldValue)
 	if oldValue then
 		print(`Coins updated from {oldValue} to {newValue}`)
 	else
@@ -238,7 +241,7 @@ Returns a `Promise` that:
 
 ### Usage Examples
 ```lua
-UserVaultService:OnHopClear(player)
+UserVaultServer.OnHopClear(player)
 :andThen(function()
 	TeleportService:Teleport(placeId, {player})
 end, function()
@@ -267,7 +270,7 @@ This is useful for scenarios like teleportation, where the player needs to remai
 #### Basic
 ```lua
 -- Wait for the profile to be ready for a hop
-UserVaultService:OnHopReady(player)
+UserVaultServer.OnHopClear(player)
 :andThen(function()
 	TeleportService:TeleportAsync(placeId, {player})
 end)
@@ -276,13 +279,13 @@ end)
 end)
 
 -- Release the player's profile without kicking them, in anticipation of teleportation
-UserVaultService:ReleaseProfile(player, true)
+UserVaultServer.ReleaseProfile(player, true)
 ```
 
 #### Using `Promise:timeout()`
 ```lua
 -- Wait for the profile to be ready for a hop, with a timeout to handle edge cases
-UserVaultService:OnHopReady(player):timeout(5) -- Timeout after 5 seconds
+UserVaultServer.OnHopClear(player):timeout(5) -- Timeout after 5 seconds
 :andThen(function()
 	-- Proceed with teleportation upon successful readiness confirmation
 	TeleportService:TeleportAsync(placeId, {player})
@@ -301,7 +304,7 @@ end)
 end)
 
 -- Once the teleportation is set up, release the player's profile without kicking them
-UserVaultService:ReleaseProfile(player, true)
+UserVaultServer.ReleaseProfile(player, true)
 ```
 > [!TIP]
 > Utilizing `dontKick` with `true` is essential for teleportation scenarios, ensuring players aren't forcibly exited from the game after their profile
@@ -325,7 +328,7 @@ Returns a boolean indicating if the profile was wiped successfully.
 
 ### Usage Examples
 ```lua
-	UserVaultService:ResetProfile(123456789)
+	UserVaultServer.ResetProfile(123456789)
 ```
 
 > [!IMPORTANT]
@@ -334,25 +337,25 @@ Returns a boolean indicating if the profile was wiped successfully.
 > [!CAUTION]
 > Resetting a profile is permanent and cannot be undone.
 
-## Start
+# Start
 
-### Description
-Initializes UserVaultService with the provided configuration. This function is essential for setting up the service's behavior according to your game's
+## Description
+Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
 needs and should be called once before starting Knit.
 
-### Parameters
-- `config: table` - Configuration options for UserVaultService:
-	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the service. Useful for debugging and monitoring service
+## Parameters
+- `config: table` - Configuration options for UserVaultServer.
+	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
 		operations.
 		- `0` - No debug information. Use this level for production environments to keep the logs clean.
-		- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of service setup.
+		- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of module setup.
 		- `2` - Includes logs for external data modifications, helping to track unexpected changes or interactions.
 		- `3` - Expands logging to include data access events, aiding in debugging data flow and access patterns.
-		- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of service operations.
-		- `5` - The most verbose level, logging all code paths taken within the service. Best used for troubleshooting specific issues.
+		- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of module operations.
+		- `5` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
 	- `DebugUseMock: boolean` (optional) - Enables the use of a mock profile store in Studio, allowing for safe testing without affecting live data.
 		Defaults to true.
-	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in `UpdatePlayerData()` return `nil` values, helping identify unintended data
+	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in [`UpdateValue()`](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#updateplayerdata) return `nil` values, helping identify unintended data
 		erasures. Defaults to true.
 	- `ProfileStoreIndex: string` (optional) - Custom identifier for the profile store, overriding the default. Useful for differentiating between
 		multiple stores or testing environments.
@@ -366,9 +369,9 @@ needs and should be called once before starting Knit.
 		- `Shared: table` and `Server: table` - Dictate the data accessible on both client and server (`Shared`), and server-only (`Server`), ensuring
 			clear data separation and security.
 
-### Usage Examples
+## Usage Examples
 ```lua
-PlayerDataService:Start({
+UserVaultServer.Start({
 	VerboseLevel = 2,
 	DebugUseMock = true,
 	WarnNilUpdate = true,
@@ -385,7 +388,9 @@ PlayerDataService:Start({
 ```
 
 > [!WARNING]
-> Ensure `Start` is called prior to starting Knit to prevent initialization issues.
+> It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
+> preventing dependency or initialization conflicts.
+> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
 
 > [!IMPORTANT]
 > Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories to avoid data conflicts and maintain integrity.

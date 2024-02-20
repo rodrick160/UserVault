@@ -1,12 +1,25 @@
--- UserVaultService
+-- UserVaultServer
 -- Quantum Maniac
--- Feb 17 2024
+-- Feb 19 2024
+
+--[[
+	 ____ ___                  ____   ____            .__   __
+	|    |   \______ __________\   \ /   /____   __ __|  |_/  |
+	|    |   /  ___// __ \_  __ \   Y   /\__  \ |  |  \  |\   __\
+	|    |  /\___ \\  ___/|  | \/\     /  / __ \|  |  /  |_|  |
+	|______//____  >\___  >__|    \___/  (____  /____/|____/__|
+	             \/     \/                    \/
+
+	===============================================
+		https://github.com/rodrick160/UserVault
+	===============================================
+]]
 
 --\\ Dependencies //--
 
 local RunService = game:GetService("RunService")
 
-local Knit = require(script.Parent.Knit)
+local Comm = require(script.Parent.Comm).ServerComm
 local ProfileService = require(script.Parent.ProfileService)
 local Promise = require(script.Parent.Promise)
 local Signal = require(script.Parent.Signal)
@@ -26,12 +39,7 @@ local PROFILE_KEY_FORMAT = "Player_%d"
 
 --\\ Module //--
 
-local UserVaultService = Knit.CreateService {
-	Name = "UserVaultService",
-	Client = {
-		DataChanged = Knit.CreateSignal(),
-	}
-}
+local UserVaultServer = {}
 
 --\\ Types //--
 
@@ -47,7 +55,7 @@ type UserVaultConfig = {
 type PlayerCache = {
 	Player: Player,
 	Profile: Profile,
-	DataChangedSignals: {[string]: Signal},
+	ValueChangedSignals: {[string]: Signal},
 	DataChangeQueue: {[string]: DataChange},
 	ProcessDataQueueSignal: Signal,
 	ReadyForHop: boolean,
@@ -73,6 +81,9 @@ local playerCaches: {[Player]: PlayerCache} = {}
 local playerLoadedSignals: {[Player]: Signal} = {}
 local hopReadySignal = Signal.new()
 
+local userVaultComm
+local dataChangedRemoteSignal
+
 --[[
 	Prints if and only if the passed level is not greater than the currently set verbose level
 ]]
@@ -87,7 +98,7 @@ end
 
 local function checkStarted()
 	if not started then
-		error("Must call UserVaultService:Start() first.", 3)
+		error("Must call UserVaultServer.Start() first.", 3)
 	end
 end
 
@@ -210,9 +221,9 @@ local function setValue(playerCache: PlayerCache, key: string, value: any): Prom
 			return
 		end
 
-		if playerCache.DataChangedSignals[key] then
+		if playerCache.ValueChangedSignals[key] then
 			debugPrint(5, `Firing data changed signal`)
-			playerCache.DataChangedSignals[key]:Fire(oldValue, value)
+			playerCache.ValueChangedSignals[key]:Fire(oldValue, value)
 		end
 
 		debugPrint(4, `Success`)
@@ -256,7 +267,7 @@ local function loadProfile(player: Player)
 			local playerCache = playerCaches[player]
 			if playerCache then
 				debugPrint(5, `Player cache found`)
-				for _, signal in playerCache.DataChangedSignals do
+				for _, signal in playerCache.ValueChangedSignals do
 					signal:Destroy()
 				end
 				playerCache.ProcessDataQueueSignal:Destroy()
@@ -286,7 +297,7 @@ local function loadProfile(player: Player)
 			local playerCache: PlayerCache = {
 				Player = player,
 				Profile = profile,
-				DataChangedSignals = {},
+				ValueChangedSignals = {},
 				DataChangeQueue = {},
 				ProcessDataQueueSignal = Signal.new(),
 				ReadyForHop = false
@@ -298,7 +309,7 @@ local function loadProfile(player: Player)
 				for key, change in playerCache.DataChangeQueue do
 					changes[key] = change.New
 				end
-				UserVaultService.Client.DataChanged:Fire(player, changes)
+				dataChangedRemoteSignal:Fire(player, changes)
 				playerCache.DataChangeQueue = {}
 			end)
 
@@ -329,39 +340,23 @@ end
 --\\ Public //--
 
 --[[
-	Returns a copy of the Shared realm of the player's profile data.
-]]
-function UserVaultService.Client:GetPlayerData(player: Player): table?
-	debugPrint(3, `Player {player} requested their player data`)
-	waitForPlayerLoaded(player)
-	local playerCache = playerCaches[player]
-	if not playerCache or not playerCache.Profile:IsActive() then
-		debugPrint(5, `Failed`)
-		return
-	end
-
-	debugPrint(5, `Success`)
-	return playerCache.Profile.Data.Shared
-end
-
---[[
-	# GetPlayerData
+	# GetValue
 
 	## Description
-	Retrieves specified data from the player's profile.
+	Retrieves specified values from the player's profile.
 
 	## Parameters
 	This function supports three parameter formats:
 
-	- `GetPlayerData(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
+	- `GetValue(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
 		- `player: Player` - The target player.
 		- `keys: {string}` - The data keys to retrieve.
 
-	- `GetPlayerData(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
+	- `GetValue(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
 		- `player: Player` - The target player.
 		- `...: string` - The data keys to retrieve.
 
-	- `GetPlayerData(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
+	- `GetValue(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
 		- `player: Player` - The target player.
 
 	## Return Value
@@ -373,10 +368,10 @@ end
 	## Usage Examples
 
 	### Array Example
-	Retrieve player data using an array of keys `"Coins"` and `"Level"`.
+	Retrieve values using an array of keys `"Coins"` and `"Level"`.
 	The promise resolves with a dictionary containing the values for these keys.
 	```lua
-	UserVaultService:GetPlayerData(player, {"Coins", "Level"}):andThen(function(data)
+	UserVault.GetValue(player, {"Coins", "Level"}):andThen(function(data)
 		print(`Player {player.DisplayName} has {data.Coins} coins and is level {data.Level}.`)
 	end, function()
 		print(`Player {player.DisplayName}'s data failed to load!`)
@@ -384,66 +379,53 @@ end
 	```
 
 	### Vararg Example
-	Retrieve player data using varargs `"Coins"` and `"Level"`.
+	Retrieve values using varargs `"Coins"` and `"Level"`.
 	The promise resolves with the values for these keys in order.
 	```lua
-	UserVaultService:GetPlayerData(player, "Coins", "Level"):andThen(function(coins, level)
+	UserVault.GetValue(player, "Coins", "Level"):andThen(function(coins, level)
 		print(`Player {player.DisplayName} has {coins} coins and is level {level}.`)
 	end, function()
 		print(`Player {player.DisplayName}'s data failed to load!`)
 	end)
 	```
+
+	> [!TIP]
+	> GetValues() is a valid alias for GetValue()
 ]]
-function UserVaultService:GetPlayerData(player: Player, ...: {string} | string): Promise
+function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promise
 	checkStarted()
 
-	debugPrint(3, `Retrieving {player}'s data`)
+	debugPrint(3, `Getting values for {player}:`, ...)
 	local args = {...}
 
-	if typeof(args[1]) == "table" then
-		debugPrint(5, `Table signature detected`)
-		local keys = args[1]
-		return Promise.new(function(resolve, reject)
-			debugPrint(5, `Waiting for player data`)
-			waitForPlayerLoaded(player)
+	local keys = if typeof(args[1]) == "table" then args[1] else args
+	return Promise.new(function(resolve, reject)
+		debugPrint(5, `Waiting for player data`)
+		waitForPlayerLoaded(player)
 
-			local playerCache = playerCaches[player]
-			if playerCache and playerCache.Profile:IsActive() then
-				debugPrint(5, `Player data found`)
-				local playerData = {}
-				for _, key in keys do
-					playerData[key] = getValue(playerCache, key)
-				end
-				resolve(playerData)
+		local playerCache = playerCaches[player]
+		if playerCache and playerCache.Profile:IsActive() then
+			debugPrint(5, `Player data found`)
+			local values = Promise.each(keys, function(key)
+				return getValue(playerCache, key)
+			end)
+			if typeof(args[1]) == "table" then
+				debugPrint(5, `Returning table`)
+				resolve(values)
 			else
-				debugPrint(5, `Player data not found`)
-				reject(`Failed to retrieve profile for player {player.DisplayName}.`)
-			end
-		end)
-	else
-		debugPrint(5, `Vararg signature detected`)
-		local keys = args
-		return Promise.new(function(resolve, reject)
-			debugPrint(5, `Waiting for player data`)
-			waitForPlayerLoaded(player)
-
-			local playerCache = playerCaches[player]
-			if playerCache and playerCache.Profile:IsActive() then
-				debugPrint(5, `Player data found`)
-				local values = Promise.each(keys, function(key)
-					return getValue(playerCache, key)
-				end)
+				debugPrint(5, `Returning tuple`)
 				resolve(table.unpack(values))
-			else
-				debugPrint(5, `Player data not found`)
-				reject(`Failed to retrieve profile for player {player.DisplayName}.`)
 			end
-		end)
-	end
+		else
+			debugPrint(5, `Player data not found`)
+			reject(`Failed to retrieve profile for player {player.DisplayName}.`)
+		end
+	end)
 end
+UserVaultServer.GetValues = UserVaultServer.GetValue
 
 --[[
-	# SetPlayerData
+	# SetValue
 
 	## Description
 	Sets a specified value for a key in the player's profile.
@@ -460,17 +442,17 @@ end
 
 	## Usage Examples
 	```lua
-	UserVaultService:SetPlayerData(player, "Coins", 500):andThen(function()
+	UserVault.SetValue(player, "Coins", 500):andThen(function()
 		print(`Successfully updated {player.DisplayName}'s coins to 500.`)
 	end, function()
 		print(`Failed to update {player.DisplayName}'s coins to 500.`)
 	end)
 	```
 ]]
-function UserVaultService:SetPlayerData(player: Player, key: string, value: any): Promise
+function UserVaultServer.SetValue(player: Player, key: string, value: any): Promise
 	checkStarted()
 
-	debugPrint(2, `Setting data for {player} ({key} = {value})`)
+	debugPrint(2, `Setting value for {player} ({key} = {value})`)
 
 	return Promise.new(function(resolve, reject)
 		debugPrint(5, `Waiting for player data`)
@@ -488,7 +470,7 @@ function UserVaultService:SetPlayerData(player: Player, key: string, value: any)
 end
 
 --[[
-	# UpdatePlayerData
+	# UpdateValue
 
 	## Description
 	Updates a specified value for a key in the player's profile by applying a callback function.
@@ -515,19 +497,19 @@ end
 
 	## Usage Examples
 	```lua
-	UserVaultService:UpdatePlayerData(player, "Coins", function(coins)
+	UserVault.UpdateValue(player, "Coins", function(coins)
 		return coins + 500
 	end):andThen(function(newCoins)
-		print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
+		print(`Successfully increased {player.DisplayName}'s coins to {newCoins}.`)
 	end, function()
 		print(`Failed to update {player.DisplayName}'s coins.`)
 	end)
 	```
 ]]
-function UserVaultService:UpdatePlayerData(player: Player, key: string, callback: (value: any) -> any): Promise
+function UserVaultServer.UpdateValue(player: Player, key: string, callback: (value: any) -> any): Promise
 	checkStarted()
 
-	debugPrint(2, `Updating data for {player} ({key})`)
+	debugPrint(2, `Updating value for {player} ({key})`)
 
 	return Promise.new(function(resolve, reject)
 		debugPrint(5, `Waiting for player data`)
@@ -540,7 +522,7 @@ function UserVaultService:UpdatePlayerData(player: Player, key: string, callback
 			:andThen(function(oldValue)
 				local newValue = assertNoYield(callback, oldValue)
 				if currentConfig.WarnNilUpdate and newValue == nil then
-					warn("UpdatePlayerData callback returned a nil value\n", debug.traceback())
+					warn("UpdateValue callback returned a nil value\n", debug.traceback())
 				end
 				return setValue(playerCache, key, newValue)
 			end))
@@ -552,13 +534,13 @@ function UserVaultService:UpdatePlayerData(player: Player, key: string, callback
 end
 
 --[[
-	# IncrementPlayerData
+	# IncrementValue
 
 	## Description
 	Increments a specified value for a key in the player's profile by a specific amount.
 	Sugar for:
 	```lua
-	UserVaultService:UpdatePlayerData(player, key, function(value)
+	UserVault.UpdateValue(player, key, function(value)
 		return value + increment
 	end)
 	```
@@ -576,25 +558,25 @@ end
 
 	## Usage Examples
 	```lua
-	UserVaultService:IncrementPlayerData(player, "Coins", 500):andThen(function(newCoins)
-		print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
+	UserVault.IncrementValue(player, "Coins", 500):andThen(function(newCoins)
+		print(`Successfully increased {player.DisplayName}'s coins to {newCoins}.`)
 	end, function()
 		print(`Failed to update {player.DisplayName}'s coins.`)
 	end)
 	```
 ]]
-function UserVaultService:IncrementPlayerData(player: Player, key: string, increment: number): Promise
+function UserVaultServer.IncrementValue(player: Player, key: string, increment: number): Promise
 	checkStarted()
 
-	debugPrint(2, `Incrementing data for {player} ({key} += {increment})`)
+	debugPrint(2, `Incrementing value for {player} ({key} += {increment})`)
 
-	return UserVaultService:UpdatePlayerData(player, key, function(value)
+	return UserVaultServer.UpdateValue(player, key, function(value)
 		return value + increment
 	end)
 end
 
 --[[
-	# GetDataChangedSignal
+	# GetValueChangedSignal
 
 	## Description
 	Creates and returns a `Signal` that is fired when a specified key's value changes in the player's profile.
@@ -612,7 +594,7 @@ end
 
 	## Usage Examples
 	```lua
-	UserVaultService:GetDataChangedSignal(player, "Coins")
+	UserVault.GetValueChangedSignal(player, "Coins")
 	:andThen(function(signal)
 		signal:Connect(function(newValue, oldValue)
 			print(`Player {player.DisplayName}'s coins changed from {oldValue} to {newValue}!`)
@@ -624,14 +606,14 @@ end
 	```
 
 	> [!NOTE]
-	> The Signal is only available after the player's profile has been successfully loaded.
-	> It does not fire for the initial load of the profile's data.
+	> The `Signal` only fires after the client's data has been successfully loaded.
+	> It does not fire for the initial load of the client's data.
 	> For initial data handling, other methods like directly retrieving the player's data upon profile load should be considered.
 ]]
-function UserVaultService:GetDataChangedSignal(player: Player, key: string): Promise
+function UserVaultServer.GetValueChangedSignal(player: Player, key: string): Promise
 	checkStarted()
 
-	debugPrint(3, `Getting data changed signal for {player} ({key})`)
+	debugPrint(3, `Getting value changed signal for {player} ({key})`)
 
 	return Promise.new(function(resolve, reject)
 		debugPrint(5, `Waiting for player data`)
@@ -640,11 +622,11 @@ function UserVaultService:GetDataChangedSignal(player: Player, key: string): Pro
 		local playerCache = playerCaches[player]
 		if playerCache and playerCache.Profile:IsActive() then
 			debugPrint(5, `Player data found`)
-			local signal = playerCache.DataChangedSignals[key]
+			local signal = playerCache.ValueChangedSignals[key]
 			if not signal then
 				debugPrint(5, `Creating new data changed signal`)
 				signal = Signal.new()
-				playerCache.DataChangedSignals[key] = signal
+				playerCache.ValueChangedSignals[key] = signal
 			end
 			resolve(signal)
 		else
@@ -655,11 +637,11 @@ function UserVaultService:GetDataChangedSignal(player: Player, key: string): Pro
 end
 
 --[[
-	# BindPlayerData
+	# BindToValue
 
 	## Description
 	Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
-	updates inthe player's profile.
+	updates in the player's profile.
 
 	## Parameters
 	- `player: Player` - The player whose data is being monitored.
@@ -675,7 +657,7 @@ end
 	## Usage Examples
 	```lua
 	-- Bind to monitor and reflect changes in 'Coins' within the player's leaderstats.
-	UserVaultService:BindPlayerData(player, "Coins", function(newValue, oldValue)
+	UserVault.BindToValue(player, "Coins", function(newValue, oldValue)
 		if oldValue then
 			print(`Coins updated from {oldValue} to {newValue}`)
 		else
@@ -689,14 +671,14 @@ end
 	> The immediate invocation of the callback provides an opportunity to initialize any dependent data or UI elements with the current value of the
 	> specified key. Subsequent invocations facilitate real-time updates, enabling dynamic content adjustments based on the player's data changes.
 ]]
-function UserVaultService:BindPlayerData(player: Player, key: string, callback: (newValue: any, oldValue: any?) -> ()): Promise
+function UserVaultServer.BindToValue(player: Player, key: string, callback: (newValue: any, oldValue: any?) -> ()): Promise
 	checkStarted()
 
 	debugPrint(3, `Binding to {player}'s data ({key})`)
 
-	return UserVaultService:GetPlayerData(player, key)
+	return UserVaultServer.GetValue(player, key)
 	:andThen(function(value)
-		UserVaultService:GetDataChangedSignal(player, key)
+		UserVaultServer.GetValueChangedSignal(player, key)
 		:andThen(function(dataChangedSignal)
 			dataChangedSignal:Connect(callback)
 		end)
@@ -724,7 +706,7 @@ end
 
 	## Usage Examples
 	```lua
-	UserVaultService:OnHopClear(player)
+	UserVault.OnHopClear(player)
 	:andThen(function()
 		TeleportService:Teleport(placeId, {player})
 	end, function()
@@ -738,7 +720,7 @@ end
 	> handle cases where a player may leave the game before teleportation can occur. Implementing error handling for promise rejection is crucial for
 	> maintaining a robust teleportation process.
 ]]
-function UserVaultService:OnHopClear(player: Player): Promise
+function UserVaultServer.OnHopClear(player: Player): Promise
 	checkStarted()
 
 	debugPrint(3, `Getting hop clear promise for {player}`)
@@ -794,7 +776,7 @@ end
 	### Basic
 	```lua
 	-- Wait for the profile to be ready for a hop
-	UserVaultService:OnHopReady(player)
+	UserVault.OnHopClear(player)
 	:andThen(function()
 		TeleportService:TeleportAsync(placeId, {player})
 	end)
@@ -803,13 +785,13 @@ end
 	end)
 
 	-- Release the player's profile without kicking them, in anticipation of teleportation
-	UserVaultService:ReleaseProfile(player, true)
+	UserVault.ReleaseProfile(player, true)
 	```
 
 	### Using `Promise:timeout()`
 	```lua
 	-- Wait for the profile to be ready for a hop, with a timeout to handle edge cases
-	UserVaultService:OnHopReady(player):timeout(5) -- Timeout after 5 seconds
+	UserVault.OnHopClear(player):timeout(5) -- Timeout after 5 seconds
 	:andThen(function()
 		-- Proceed with teleportation upon successful readiness confirmation
 		TeleportService:TeleportAsync(placeId, {player})
@@ -828,7 +810,7 @@ end
 	end)
 
 	-- Once the teleportation is set up, release the player's profile without kicking them
-	UserVaultService:ReleaseProfile(player, true)
+	UserVault.ReleaseProfile(player, true)
 	```
 	> [!TIP]
 	> Utilizing `dontKick` with `true` is essential for teleportation scenarios, ensuring players aren't forcibly exited from the game after their profile
@@ -836,7 +818,7 @@ end
 	> with this process. This approach allows for the implementation of a fallback mechanism, ensuring that if the player does not leave the game within a
 	> specified timeout period, the game can take appropriate action, such as forcibly removing the player or logging an error for further investigation.
 ]]
-function UserVaultService:ReleaseProfile(player: Player, dontKick: boolean?)
+function UserVaultServer.ReleaseProfile(player: Player, dontKick: boolean?)
 	checkStarted()
 
 	debugPrint(3, `Externally releasing profile for {player} (dontKick = {dontKick})`)
@@ -869,7 +851,7 @@ end
 
 	## Usage Examples
 	```lua
-		UserVaultService:ResetProfile(123456789)
+		UserVault.ResetProfile(123456789)
 	```
 
 	> [!IMPORTANT]
@@ -878,7 +860,7 @@ end
 	> [!CAUTION]
 	> Resetting a profile is permanent and cannot be undone.
 ]]
-function UserVaultService:ResetProfile(userId: number, useMock: boolean?, profileStoreIndex: string?): boolean
+function UserVaultServer.ResetProfile(userId: number, useMock: boolean?, profileStoreIndex: string?): boolean
 	if not RunService:IsStudio() then
 		error("ResetProfile() must be called from Roblox Studio.")
 	end
@@ -893,22 +875,22 @@ end
 	# Start
 
 	## Description
-	Initializes UserVaultService with the provided configuration. This function is essential for setting up the service's behavior according to your game's
+	Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
 	needs and should be called once before starting Knit.
 
 	## Parameters
-	- `config: table` - Configuration options for UserVaultService:
-		- `VerboseLevel: number` (optional) - Controls the level of debug information output by the service. Useful for debugging and monitoring service
+	- `config: table` - Configuration options for UserVaultServer.
+		- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
 			operations.
 			- `0` - No debug information. Use this level for production environments to keep the logs clean.
-			- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of service setup.
+			- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of module setup.
 			- `2` - Includes logs for external data modifications, helping to track unexpected changes or interactions.
 			- `3` - Expands logging to include data access events, aiding in debugging data flow and access patterns.
-			- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of service operations.
-			- `5` - The most verbose level, logging all code paths taken within the service. Best used for troubleshooting specific issues.
+			- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of module operations.
+			- `5` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
 		- `DebugUseMock: boolean` (optional) - Enables the use of a mock profile store in Studio, allowing for safe testing without affecting live data.
 			Defaults to true.
-		- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in `UpdatePlayerData()` return `nil` values, helping identify unintended data
+		- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in `UpdateValue()` return `nil` values, helping identify unintended data
 			erasures. Defaults to true.
 		- `ProfileStoreIndex: string` (optional) - Custom identifier for the profile store, overriding the default. Useful for differentiating between
 			multiple stores or testing environments.
@@ -924,7 +906,7 @@ end
 
 	## Usage Examples
 	```lua
-	PlayerDataService:Start({
+	UserVaultServer.Start({
 		VerboseLevel = 2,
 		DebugUseMock = true,
 		WarnNilUpdate = true,
@@ -941,7 +923,9 @@ end
 	```
 
 	> [!WARNING]
-	> Ensure `Start` is called prior to starting Knit to prevent initialization issues.
+	> It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
+	> preventing dependency or initialization conflicts.
+	> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
 
 	> [!IMPORTANT]
 	> Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories to avoid data conflicts and maintain integrity.
@@ -949,12 +933,12 @@ end
 	> [!NOTE]
 	> The default profile store key is `"PlayerData"`
 ]]
-function UserVaultService:Start(config: UserVaultConfig)
+function UserVaultServer.Start(config: UserVaultConfig)
 	if started then
-		error("Cannot call UserVaultService:Start() more than once.", 2)
+		error("Cannot call UserVaultServer.Start() more than once.", 2)
 
 	elseif config == nil then
-		error("UserVaultService:Start() must be given a config table.", 2)
+		error("UserVaultServer.Start() must be given a config table.", 2)
 	elseif typeof(config) ~= "table" then
 		error("config must be a table.", 2)
 
@@ -998,6 +982,8 @@ function UserVaultService:Start(config: UserVaultConfig)
 		end
 	end
 
+	started = true
+
 	currentConfig = TableUtil.Reconcile(config, DEFAULT_CONFIG)
 	TableUtil.Lock(currentConfig)
 
@@ -1006,7 +992,24 @@ function UserVaultService:Start(config: UserVaultConfig)
 		profileStore = profileStore.Mock
 	end
 
-	started = true
+	userVaultComm = Comm.new(game.ReplicatedStorage, "UserVaultComm")
+	dataChangedRemoteSignal = userVaultComm:CreateSignal("DataChanged")
+
+	--[[
+		Returns a copy of the Shared portion of the player's profile data.
+	]]
+	userVaultComm:BindFunction("GetPlayerData", function(player: Player): table?
+		debugPrint(3, `Player {player} requested their player data`)
+		waitForPlayerLoaded(player)
+		local playerCache = playerCaches[player]
+		if not playerCache or not playerCache.Profile:IsActive() then
+			debugPrint(5, `Failed`)
+			return
+		end
+
+		debugPrint(5, `Success`)
+		return playerCache.Profile.Data.Shared
+	end)
 
 	local function releasePlayer(player)
 		local playerCache = playerCaches[player]
@@ -1024,4 +1027,4 @@ end
 
 --\\ Return //--
 
-return UserVaultService
+return UserVaultServer
