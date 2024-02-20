@@ -18,7 +18,7 @@
 local RunService = game:GetService("RunService")
 
 if RunService:IsServer() then
-	return require(script.UserVaultService)
+	return require(script.UserVaultServer)
 else
-	return require(script.UserVaultController)
+	return require(script.UserVaultClient)
 end
