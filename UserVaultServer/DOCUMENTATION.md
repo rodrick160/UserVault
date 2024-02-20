@@ -319,7 +319,6 @@ Deletes all data stored in a player's profile.
 
 ### Parameters
 - `userId: number` - The user ID of the target player.
-- `useMock: boolean` (optional) - If true, wipes the Mock profile rather than the real profile.
 - `profileStoreIndex: string` (optional) - If provided, overrides the default profile store index.
 	Only needed if using a profile store index other than the default.
 

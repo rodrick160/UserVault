@@ -849,7 +849,6 @@ end
 
 	## Parameters
 	- `userId: number` - The user ID of the target player.
-	- `useMock: boolean` (optional) - If true, wipes the Mock profile rather than the real profile.
 	- `profileStoreIndex: string` (optional) - If provided, overrides the default profile store index.
 		Only needed if using a profile store index other than the default.
 
@@ -867,7 +866,7 @@ end
 	> [!CAUTION]
 	> Resetting a profile is permanent and cannot be undone.
 ]]
-function UserVaultServer.ResetProfile(userId: number, useMock: boolean?, profileStoreIndex: string?): boolean
+function UserVaultServer.ResetProfile(userId: number, profileStoreIndex: string?): boolean
 	if not RunService:IsStudio() then
 		error("ResetProfile() must be called from Roblox Studio.")
 	end
@@ -875,7 +874,7 @@ function UserVaultServer.ResetProfile(userId: number, useMock: boolean?, profile
 	profileStoreIndex = profileStoreIndex or DEFAULT_CONFIG.ProfileStoreIndex
 
 	local store = ProfileService.GetProfileStore(profileStoreIndex, {})
-	store:WipeProfileAsync(PROFILE_KEY_FORMAT:format(userId), useMock)
+	store:WipeProfileAsync(PROFILE_KEY_FORMAT:format(userId))
 end
 
 --[[
