@@ -937,7 +937,8 @@ end
 	> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
 
 	> [!IMPORTANT]
-	> Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories to avoid data conflicts and maintain integrity.
+	> Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories.
+	> If there is a conflict, an error will be thrown.
 
 	> [!NOTE]
 	> The default profile store key is `"PlayerData"`
