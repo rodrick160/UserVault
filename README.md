@@ -10,7 +10,7 @@ UserVault is a DataStore module built on ProfileService which provides safe and 
 
 Add UserVault to your [Wally](https://github.com/UpliftGames/wally) packages:
 
-`rodrick160/uservault@0.2.8`
+`rodrick160/uservault@0.2.9`
 
 ## Setup
 
@@ -49,8 +49,8 @@ Knit.Start():catch(warn)
 # Docs
 
 Depending on whether UserVault is required from the server or client, it will return one of the following objects:
-- [`UserVaultServer`](/UserVaultServer/DOCUMENTATION.md)
-- [`UserVaultClient`](/UserVaultClient/DOCUMENTATION.md)
+- [`UserVaultServer`](/src/UserVaultServer/DOCUMENTATION.md)
+- [`UserVaultClient`](/src/UserVaultClient/DOCUMENTATION.md)
 
 # Credit
 
