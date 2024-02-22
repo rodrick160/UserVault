@@ -34,9 +34,9 @@ Retrieve player data using an array of keys `"Coins"` and `"Level"`.
 The promise resolves with a dictionary containing the values for these keys.
 ```lua
 UserVaultServer.GetValue(player, {"Coins", "Level"}):andThen(function(data)
-	print(`Player {player.DisplayName} has {data.Coins} coins and is level {data.Level}.`)
+	print("Player " .. player.DisplayName .. " has " .. data.Coins .. " coins and is level " .. data.Level)
 end, function()
-	print(`Player {player.DisplayName}'s data failed to load!`)
+	print("Player " .. player.DisplayName .. "'s data failed to load!")
 end)
 ```
 
@@ -45,9 +45,9 @@ Retrieve player data using varargs `"Coins"` and `"Level"`.
 The promise resolves with the values for these keys in order.
 ```lua
 UserVaultServer.GetValue(player, "Coins", "Level"):andThen(function(coins, level)
-	print(`Player {player.DisplayName} has {coins} coins and is level {level}.`)
+	print("Player " .. player.DisplayName .. " has " .. coins .. " coins and is level " .. level)
 end, function()
-	print(`Player {player.DisplayName}'s data failed to load!`)
+	print("Player " .. player.DisplayName .. "'s data failed to load!")
 end)
 ```
 
@@ -72,9 +72,9 @@ Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 ### Usage Examples
 ```lua
 UserVaultServer.SetValue(player, "Coins", 500):andThen(function()
-	print(`Successfully updated {player.DisplayName}'s coins to 500.`)
+	print("Successfully updated " .. player.DisplayName .. "'s coins to 500")
 end, function()
-	print(`Failed to update {player.DisplayName}'s coins to 500.`)
+	print("Failed to update " .. player.DisplayName .. "'s coins to 500!")
 end)
 ```
 
@@ -108,9 +108,9 @@ Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 UserVaultServer.UpdateValue(player, "Coins", function(coins)
 	return coins + 500
 end):andThen(function(newCoins)
-	print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
+	print("Successfully increased " .. player.DisplayName .. "'s coins to " .. newCoins)
 end, function()
-	print(`Failed to update {player.DisplayName}'s coins.`)
+	print("Failed to update " .. player.DisplayName .. "'s coins!")
 end)
 ```
 
@@ -139,9 +139,9 @@ This ensures that the calling code can immediately use the updated value.
 ### Usage Examples
 ```lua
 UserVaultServer.IncrementValue(player, "Coins", 500):andThen(function(newCoins)
-	print(`Successfully increased {player.DisplayName}'s coins to ${newCoins}.`)
+	print("Successfully increased " .. player.DisplayName .. "'s coins by " .. newCoins)
 end, function()
-	print(`Failed to update {player.DisplayName}'s coins.`)
+	print("Failed to increase " .. player.DisplayName .. "'s coins!")
 end)
 ```
 
@@ -166,11 +166,11 @@ The promise is rejected if the player's profile cannot be loaded.
 UserVaultServer.GetValueChangedSignal(player, "Coins")
 :andThen(function(signal)
 	signal:Connect(function(newValue, oldValue)
-		print(`Player {player.DisplayName}'s coins changed from {oldValue} to {newValue}!`)
+		print("Player " .. player.DisplayName .. "'s coins changed from " .. oldValue .. " to " .. newValue)
 	end)
 end)
 :catch(function(error)
-	print(`Player {player.DisplayName}'s data failed to load!`)
+	print("Player " .. player.DisplayName .. "'s data failed to load!")
 end)
 ```
 
@@ -201,9 +201,9 @@ Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 -- Bind to monitor and reflect changes in 'Coins' within the player's leaderstats.
 UserVaultServer.BindToValue(player, "Coins", function(newValue, oldValue)
 	if oldValue then
-		print(`Coins updated from {oldValue} to {newValue}`)
+		print("Coins updated from " .. oldValue .. " to " .. newValue)
 	else
-		print(`Initial coin value: {newValue}`)
+		print("Initial coin value: " .. newValue)
 	end
 	player.leaderstats.Coins.Value = newValue
 end)
@@ -267,7 +267,7 @@ UserVaultServer.OnHopClear(player)
 	TeleportService:TeleportAsync(placeId, {player})
 end)
 :catch(function(e)
-	print(`Something went wrong when teleporting`)
+	print("Something went wrong when teleporting")
 end)
 
 -- Release the player's profile without kicking them, in anticipation of teleportation
@@ -285,9 +285,9 @@ end)
 :catch(function(e)
 	-- Handle timeout or other errors
 	if Promise.Error.isKind(e, Promise.Error.Kind.TimedOut) then
-		print(`Timeout occurred while waiting for {player.DisplayName}'s profile to be ready for hop.`)
+		print("Timeout occurred while waiting for " .. player.DisplayName .. "'s profile to be ready for hop")
 	else
-		print(`An error occurred while preparing {player.DisplayName} for teleportation: {e}`)
+		print("An error occurred while preparing " .. player.DisplayName .. " for teleportation: " .. e)
 	end
 	-- Fallback logic for errors, such as kicking or retrying the teleportation process
 	if player.Parent then

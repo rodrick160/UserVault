@@ -69,7 +69,7 @@ Retrieve values using an array of keys `"Coins"` and `"Level"`.
 The promise resolves with a dictionary containing the values for these keys.
 ```lua
 UserVault.GetValue({"Coins", "Level"}):andThen(function(data)
-	print(`Local player has {data.Coins} coins and is level {data.Level}.`)
+	print("Local player has " .. data.Coins .. " coins and is level " .. data.Level)
 end)
 ```
 
@@ -78,7 +78,7 @@ Retrieve values using varargs `"Coins"` and `"Level"`.
 The promise resolves with the values for these keys in order.
 ```lua
 UserVault.GetValue("Coins", "Level"):andThen(function(coins, level)
-	print(`Local player has {coins} coins and is level {level}.`)
+	print("Local player has " .. coins .. "coins and is level " .. level)
 end)
 ```
 
@@ -103,7 +103,7 @@ The resolved signal can then be connected to functions that will be called with 
 UserVault.GetValueChangedSignal("Coins")
 :andThen(function(signal)
 	signal:Connect(function(newValue, oldValue)
-		print(`Local player's coins changed from {oldValue} to {newValue}!`)
+		print("Local player's coins changed from " .. oldValue .. " to " .. newValue)
 	end)
 end)
 ```
@@ -132,9 +132,9 @@ Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that reso
 -- Bind to monitor and reflect changes in 'Coins' in a `TextLabel`.
 UserVault.BindToValue("Coins", function(newValue, oldValue)
 	if oldValue then
-		print(`Coins updated from {oldValue} to {newValue}`)
+		print("Coins updated from " .. oldValue .. " to " .. newValue)
 	else
-		print(`Initial coin value: {newValue}`)
+		print("Initial coin value" .. newValue)
 	end
 	textLabel.Text = newValue
 end)
@@ -158,7 +158,7 @@ needs and should be called once before starting Knit.
 		- `1` - Logs updates to data, useful for tracking dynamic changes during development.
 		- `2` - Logs external data access, helping identify unexpected interactions.
 		- `3` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
-	- `UseFusion3: boolean` (optional) - Determines whether Fusion objects adhere to v0.3.0 (true) or default to v0.2.0 (false).
+	- `UseFusion3: boolean` (optional) - Determines whether Fusion objects adhere to v0.3.0 (`true`) or default to v0.2.0 (`false`).
 		Choosing v0.3.0 may offer enhanced features or performance improvements tailored to specific project requirements.
 
 ### Usage Examples
