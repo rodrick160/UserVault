@@ -7,6 +7,68 @@ It should be started before any dependent modules (see [`UserVaultServer.Start()
 
 # Docs
 
+## Start
+
+### Description
+Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
+needs and should be called once before starting Knit.
+
+### Parameters
+- `config: table` - Configuration options for UserVaultServer.
+	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
+		operations.
+		- `0` - No debug information. Use this level for production environments to keep the logs clean.
+		- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of module setup.
+		- `2` - Includes logs for external data modifications, helping to track unexpected changes or interactions.
+		- `3` - Expands logging to include data access events, aiding in debugging data flow and access patterns.
+		- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of module operations.
+		- `5` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
+	- `DebugUseMock: boolean` (optional) - Enables the use of a mock profile store in Studio, allowing for safe testing without affecting live data.
+		Defaults to true.
+	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in [`UpdateValue()`](./DOCUMENTATION.md#updatevalue) return `nil` values, helping identify unintended data
+		erasures. Defaults to true.
+	- `ProfileStoreIndex: string` (optional) - Custom identifier for the profile store, overriding the default. Useful for differentiating between
+		multiple stores or testing environments.
+	- `PlayerDataUpdateFunctions: table` - Contains functions for updating player data between versions. Each function should convert data from its index
+		version to the next, ensuring smooth transitions during updates.
+		- Functions are indexed corresponding to the version they update from (e.g., function at index 1 updates from Version 1 to 2).
+			This allows for sequential data transformations across multiple versions.
+	- `PlayerDataTemplate: table` - Defines the default data structure for new player profiles. Critical for establishing initial data states and
+		versioning.
+		- `Version: number` - Indicates the template version, used to trigger data updates via `PlayerDataUpdateFunctions` for existing profiles.
+		- `Shared: table` and `Server: table` - Dictate the data accessible on both client and server (`Shared`), and server-only (`Server`), ensuring
+			clear data separation and security.
+
+### Usage Examples
+```lua
+UserVaultServer.Start({
+	VerboseLevel = 2,
+	DebugUseMock = true,
+	WarnNilUpdate = true,
+	ProfileStoreIndex = "PlayerData",
+	PlayerDataUpdateFunctions = { 
+		[1] = function(data) ... end, -- Example update function from Version 1 to 2
+	},
+	PlayerDataTemplate = {
+		Version = 1,
+		Shared = { Coins = 0 },
+		Server = { Inventory = {} },
+	}
+})
+```
+
+> [!WARNING]
+> It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
+> preventing dependency or initialization conflicts.
+> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
+
+> [!IMPORTANT]
+> Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories.
+> If there is a conflict, an error will be thrown.
+
+> [!NOTE]
+> The default profile store key is `"PlayerData"`
+
 ## GetValue
 
 ### Description
@@ -332,65 +394,3 @@ UserVaultServer.ResetProfile(123456789)
 
 > [!CAUTION]
 > Resetting a profile is permanent and cannot be undone.
-
-## Start
-
-### Description
-Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
-needs and should be called once before starting Knit.
-
-### Parameters
-- `config: table` - Configuration options for UserVaultServer.
-	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
-		operations.
-		- `0` - No debug information. Use this level for production environments to keep the logs clean.
-		- `1` - Logs basic events like profile loading and releasing. Good for initial testing and verification of module setup.
-		- `2` - Includes logs for external data modifications, helping to track unexpected changes or interactions.
-		- `3` - Expands logging to include data access events, aiding in debugging data flow and access patterns.
-		- `4` - Provides detailed logs on all function calls, useful for in-depth debugging of module operations.
-		- `5` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
-	- `DebugUseMock: boolean` (optional) - Enables the use of a mock profile store in Studio, allowing for safe testing without affecting live data.
-		Defaults to true.
-	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in [`UpdateValue()`](./DOCUMENTATION.md#updatevalue) return `nil` values, helping identify unintended data
-		erasures. Defaults to true.
-	- `ProfileStoreIndex: string` (optional) - Custom identifier for the profile store, overriding the default. Useful for differentiating between
-		multiple stores or testing environments.
-	- `PlayerDataUpdateFunctions: table` - Contains functions for updating player data between versions. Each function should convert data from its index
-		version to the next, ensuring smooth transitions during updates.
-		- Functions are indexed corresponding to the version they update from (e.g., function at index 1 updates from Version 1 to 2).
-			This allows for sequential data transformations across multiple versions.
-	- `PlayerDataTemplate: table` - Defines the default data structure for new player profiles. Critical for establishing initial data states and
-		versioning.
-		- `Version: number` - Indicates the template version, used to trigger data updates via `PlayerDataUpdateFunctions` for existing profiles.
-		- `Shared: table` and `Server: table` - Dictate the data accessible on both client and server (`Shared`), and server-only (`Server`), ensuring
-			clear data separation and security.
-
-### Usage Examples
-```lua
-UserVaultServer.Start({
-	VerboseLevel = 2,
-	DebugUseMock = true,
-	WarnNilUpdate = true,
-	ProfileStoreIndex = "PlayerData",
-	PlayerDataUpdateFunctions = { 
-		[1] = function(data) ... end, -- Example update function from Version 1 to 2
-	},
-	PlayerDataTemplate = {
-		Version = 1,
-		Shared = { Coins = 0 },
-		Server = { Inventory = {} },
-	}
-})
-```
-
-> [!WARNING]
-> It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
-> preventing dependency or initialization conflicts.
-> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
-
-> [!IMPORTANT]
-> Ensure all keys in the PlayerDataTemplate are unique across the Shared and Server categories.
-> If there is a conflict, an error will be thrown.
-
-> [!NOTE]
-> The default profile store key is `"PlayerData"`

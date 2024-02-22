@@ -100,36 +100,6 @@ end
 --\\ Public //--
 
 --[[
-	# [DataReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#dataready)
-
-	## Description
-	Returns a boolean flag indicating if the client's data is ready for consumption.
-
-	> [!TIP]
-	> Pairs well with `GetDataReadySignal()`
-]]
-function UserVaultClient.DataReady(): boolean
-	checkStarted()
-
-	debugPrint(3, `Getting data ready flag`)
-	return dataReady
-end
-
---[[
-	# [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
-
-	## Description
-	Returns a `Signal` which fires when the client's data becomes ready for consuption.
-
-	> [!WARNING]
-	> The returned signal will not fire if the function is called after the data is already ready.
-	> Use `DataReady()` before waiting for this signal.
-]]
-function UserVaultClient.GetDataReadySignal(): Signal
-	return dataReadySignalExternal
-end
-
---[[
 	# [GetState](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getstate)
 
 	## Description
@@ -358,6 +328,36 @@ function UserVaultClient.BindToValue(key: string, callback: (any) -> ())
 		UserVaultClient.GetValueChangedSignal(key):Connect(callback)
 		callback(value)
 	end)
+end
+
+--[[
+	# [DataReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#dataready)
+
+	## Description
+	Returns a boolean flag indicating if the client's data is ready for consumption.
+
+	> [!TIP]
+	> Pairs well with `GetDataReadySignal()`
+]]
+function UserVaultClient.DataReady(): boolean
+	checkStarted()
+
+	debugPrint(3, `Getting data ready flag`)
+	return dataReady
+end
+
+--[[
+	# [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
+
+	## Description
+	Returns a `Signal` which fires when the client's data becomes ready for consuption.
+
+	> [!WARNING]
+	> The returned signal will not fire if the function is called after the data is already ready.
+	> Use `DataReady()` before waiting for this signal.
+]]
+function UserVaultClient.GetDataReadySignal(): Signal
+	return dataReadySignalExternal
 end
 
 --[[
