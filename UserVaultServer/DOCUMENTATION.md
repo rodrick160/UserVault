@@ -324,7 +324,7 @@ Returns a boolean indicating if the profile was wiped successfully.
 
 ### Usage Examples
 ```lua
-	UserVaultServer.ResetProfile(123456789)
+UserVaultServer.ResetProfile(123456789)
 ```
 
 > [!IMPORTANT]

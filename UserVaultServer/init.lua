@@ -860,7 +860,7 @@ end
 
 	## Usage Examples
 	```lua
-		UserVault.ResetProfile(123456789)
+	UserVault.ResetProfile(123456789)
 	```
 
 	> [!IMPORTANT]
