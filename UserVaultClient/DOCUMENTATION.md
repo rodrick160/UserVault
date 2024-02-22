@@ -1,12 +1,12 @@
 # UserVaultClient Documentation
 
-- [DataReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#dataready)
-- [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
-- [GetState](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getstate)
-- [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getvalue)
-- [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getvaluechangedsignal)
-- [BindToValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#bindtovalue)
-- [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#start)
+- [DataReady](./DOCUMENTATION.md#dataready)
+- [GetDataReadySignal](./DOCUMENTATION.md#getdatareadysignal)
+- [GetState](./DOCUMENTATION.md#getstate)
+- [GetValue](./DOCUMENTATION.md#getvalue)
+- [GetValueChangedSignal](./DOCUMENTATION.md#getvaluechangedsignal)
+- [BindToValue](./DOCUMENTATION.md#bindtovalue)
+- [Start](./DOCUMENTATION.md#start)
 
 # DataReady
 
