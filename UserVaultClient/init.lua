@@ -97,7 +97,7 @@ end
 --\\ Public //--
 
 --[[
-	# DataReady
+	# [DataReady](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#dataready)
 
 	## Description
 	Returns a boolean flag indicating if the client's data is ready for consumption.
@@ -113,7 +113,7 @@ function UserVaultClient.DataReady(): boolean
 end
 
 --[[
-	# GetDataReadySignal
+	# [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
 
 	## Description
 	Returns a `Signal` which fires when the client's data becomes ready for consuption.
@@ -127,7 +127,7 @@ function UserVaultClient.GetDataReadySignal(): Signal
 end
 
 --[[
-	# GetState
+	# [GetState](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getstate)
 
 	## Description
 	Returns a read-only state object representing a value in the player's data profile.
@@ -172,7 +172,7 @@ function UserVaultClient.GetState(key: string, defaultValue: any): Computed<any>
 end
 
 --[[
-	# GetValue
+	# [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getvalue)
 
 	## Description
 	Retrieves specified values from the client's profile.
@@ -248,7 +248,7 @@ end
 UserVaultClient.GetValues = UserVaultClient.GetValue
 
 --[[
-	# GetValueChangedSignal
+	# [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#getvaluechangedsignal)
 
 	## Description
 	Creates and returns a `Signal` that is fired when a specified key's value changes in the client's profile.
@@ -292,7 +292,7 @@ function UserVaultClient.GetValueChangedSignal(key: string): Signal
 end
 
 --[[
-	# BindToValue
+	# [BindToValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#bindtovalue)
 
 	## Description
 	Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
@@ -336,7 +336,7 @@ function UserVaultClient.BindToValue(key: string, callback: (any) -> ())
 end
 
 --[[
-	# Start
+	# [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultClient/DOCUMENTATION.md#start)
 
 	## Description
 	Initializes UserVaultClient with the provided configuration. This function is essential for setting up the module's behavior according to your game's

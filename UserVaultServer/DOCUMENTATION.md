@@ -328,13 +328,13 @@ Returns a boolean indicating if the profile was wiped successfully.
 > [!CAUTION]
 > Resetting a profile is permanent and cannot be undone.
 
-# Start
+## Start
 
-## Description
+### Description
 Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
 needs and should be called once before starting Knit.
 
-## Parameters
+### Parameters
 - `config: table` - Configuration options for UserVaultServer.
 	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
 		operations.
@@ -360,7 +360,7 @@ needs and should be called once before starting Knit.
 		- `Shared: table` and `Server: table` - Dictate the data accessible on both client and server (`Shared`), and server-only (`Server`), ensuring
 			clear data separation and security.
 
-## Usage Examples
+### Usage Examples
 ```lua
 UserVaultServer.Start({
 	VerboseLevel = 2,

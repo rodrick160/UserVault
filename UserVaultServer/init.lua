@@ -340,7 +340,7 @@ end
 --\\ Public //--
 
 --[[
-	# GetValue
+	# [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvalue)
 
 	## Description
 	Retrieves specified values from the player's profile.
@@ -432,7 +432,7 @@ end
 UserVaultServer.GetValues = UserVaultServer.GetValue
 
 --[[
-	# SetValue
+	# [SetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#setvalue)
 
 	## Description
 	Sets a specified value for a key in the player's profile.
@@ -477,7 +477,7 @@ function UserVaultServer.SetValue(player: Player, key: string, value: any): Prom
 end
 
 --[[
-	# UpdateValue
+	# [UpdateValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#updatevalue)
 
 	## Description
 	Updates a specified value for a key in the player's profile by applying a callback function.
@@ -541,7 +541,7 @@ function UserVaultServer.UpdateValue(player: Player, key: string, callback: (val
 end
 
 --[[
-	# IncrementValue
+	# [IncrementValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#incrementvalue)
 
 	## Description
 	Increments a specified value for a key in the player's profile by a specific amount.
@@ -583,7 +583,7 @@ function UserVaultServer.IncrementValue(player: Player, key: string, increment: 
 end
 
 --[[
-	# GetValueChangedSignal
+	# [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvaluechangedsignal)
 
 	## Description
 	Creates and returns a `Signal` that is fired when a specified key's value changes in the player's profile.
@@ -644,7 +644,7 @@ function UserVaultServer.GetValueChangedSignal(player: Player, key: string): Pro
 end
 
 --[[
-	# BindToValue
+	# [BindToValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#bindtovalue)
 
 	## Description
 	Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
@@ -694,7 +694,7 @@ function UserVaultServer.BindToValue(player: Player, key: string, callback: (new
 end
 
 --[[
-	# OnHopClear
+	# [OnHopClear](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#onhopclear)
 
 	## Description
 	Prepares a player's profile for teleportation by ensuring it is properly released and ready to be loaded in a new game instance. `OnHopClear` utilizes
@@ -768,7 +768,7 @@ function UserVaultServer.OnHopClear(player: Player): Promise
 end
 
 --[[
-	# ReleaseProfile
+	# [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#releaseprofile)
 
 	## Description
 	Provides an option to release a player's profile with a parameter that can prevent the player from being automatically kicked from the game.
@@ -842,7 +842,7 @@ function UserVaultServer.ReleaseProfile(player: Player, dontKick: boolean?)
 end
 
 --[[
-	# ResetProfile
+	# [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#resetprofile)
 
 	## Description
 	Deletes all data stored in a player's profile.
@@ -878,7 +878,7 @@ function UserVaultServer.ResetProfile(userId: number, profileStoreIndex: string?
 end
 
 --[[
-	# Start
+	# [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#start)
 
 	## Description
 	Initializes UserVaultServer with the provided configuration. This function is essential for setting up the module's behavior according to your game's
