@@ -25,7 +25,11 @@ local UserVault = require(game.ReplicatedStorage.Packages.UserVault)
 
 UserVault.Start {
 	PlayerDataTemplate = {
-		Coins = 0
+		Version = 1,
+		Shared = {
+			Coins = 0
+		},
+		Server = {}
 	}
 }
 
