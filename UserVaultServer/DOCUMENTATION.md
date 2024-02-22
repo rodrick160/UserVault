@@ -279,7 +279,7 @@ end)
 UserVaultServer.ReleaseProfile(player, true)
 ```
 
-#### Using `Promise:timeout()`
+#### Using [`Promise:timeout()`](https://eryn.io/roblox-lua-promise/api/Promise/#timeout)
 ```lua
 -- Wait for the profile to be ready for a hop, with a timeout to handle edge cases
 UserVaultServer.OnHopClear(player):timeout(5) -- Timeout after 5 seconds
