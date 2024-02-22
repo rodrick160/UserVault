@@ -2,6 +2,10 @@
 
 # UserVaultClient
 
+UserVaultClient allows the client to access their own player data and interact with it in various ways.
+
+# Docs
+
 ## DataReady
 
 ### Description

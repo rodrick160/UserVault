@@ -13,6 +13,8 @@
 	===============================================
 		https://github.com/rodrick160/UserVault
 	===============================================
+
+	UserVaultClient allows the client to access their own player data and interact with it in various ways.
 ]]
 
 --\\ Dependencies //--
@@ -69,6 +71,7 @@ local dataChangedSignals: {[string]: Signal} = {}
 
 local data = {}
 local dataStateValues = {}
+local dataStateComputeds = {}
 local started = false
 
 local function debugPrint(level: number, ...: any...)
@@ -158,16 +161,38 @@ function UserVaultClient.GetState(key: string, defaultValue: any): Computed<any>
 	local value = dataStateValues[key] or Value(data[key])
 	dataStateValues[key] = value
 
-	if currentConfig.UseFusion3 then
-		debugPrint(3, `Returning Fusion 0.3 computed`)
-		return Fusion3.Computed(function(use)
-			return if dataReady then use(value) else defaultValue
-		end)
+	if defaultValue == nil then
+		debugPrint(3, `No default value provided`)
+		local computed = dataStateComputeds[key]
+		if not computed then
+			debugPrint(3, `Generating new Computed`)
+			if currentConfig.UseFusion3 then
+				debugPrint(3, `Generating Fusion 0.3 Computed`)
+				computed = Fusion3.Computed(function(use)
+					return use(value)
+				end)
+			else
+				debugPrint(3, `Generating Fusion 0.2 Computed`)
+				computed = Fusion2.Computed(function()
+					return value:get()
+				end)
+			end
+			dataStateComputeds[key] = computed
+		end
+		return computed
 	else
-		debugPrint(3, `Returning Fusion 0.2 computed`)
-		return Fusion2.Computed(function()
-			return if dataReady then value:get() else defaultValue
-		end)
+		debugPrint(3, `Default value provided, generating new Computed`)
+		if currentConfig.UseFusion3 then
+			debugPrint(3, `Returning Fusion 0.3 Computed`)
+			return Fusion3.Computed(function(use)
+				return if use(dataReadyValue) then use(value) else defaultValue
+			end)
+		else
+			debugPrint(3, `Returning Fusion 0.2 Computed`)
+			return Fusion2.Computed(function()
+				return if dataReadyValue:get() then value:get() else defaultValue
+			end)
+		end
 	end
 end
 

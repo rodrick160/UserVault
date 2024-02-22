@@ -13,6 +13,9 @@
 	===============================================
 		https://github.com/rodrick160/UserVault
 	===============================================
+
+	UserVaultServer is responsible for loading, releasing, and accessing player data on the server.
+	It should be started before any dependent modules (see `UserVaultServer.Start()`).
 ]]
 
 --\\ Dependencies //--

@@ -2,6 +2,11 @@
 
 # UserVaultServer
 
+UserVaultServer is responsible for loading, releasing, and accessing player profiles on the server.
+It should be started before any dependent modules (see [`UserVaultServer.Start()`](./DOCUMENTATION.md#start)).
+
+# Docs
+
 ## GetValue
 
 ### Description
