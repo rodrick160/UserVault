@@ -1,15 +1,6 @@
-# UserVaultServer Documentation
+![UserVault Logo](/logo/Small/UserVault.png)
 
-- [GetValue](./DOCUMENTATION.md#getvalue)
-- [SetValue](./DOCUMENTATION.md#setvalue)
-- [UpdateValue](./DOCUMENTATION.md#updatevalue)
-- [IncrementValue](./DOCUMENTATION.md#incrementvalue)
-- [GetValueChangedSignal](./DOCUMENTATION.md#getvaluechangedsignal)
-- [BindToValue](./DOCUMENTATION.md#bindtovalue)
-- [OnHopClear](./DOCUMENTATION.md#onhopclear)
-- [ReleaseProfile](./DOCUMENTATION.md#releaseprofile)
-- [ResetProfile](./DOCUMENTATION.md#resetprofile)
-- [Start](./DOCUMENTATION.md#start)
+# UserVaultServer
 
 ## GetValue
 
@@ -31,7 +22,7 @@ This function supports three parameter formats:
 	- `player: Player` - The target player.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves with the requested player data on success. When `keys` is an array, the promise resolves with a dictionary mapping each key to its value.
 	When using varargs, the promise resolves with the values directly.
 - Rejects if the player profile cannot be loaded.
@@ -74,7 +65,7 @@ Sets a specified value for a key in the player's profile.
 - `value: any` - The new value to assign to the key.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves when the value is successfully updated in the player's profile.
 - Rejects if updating the player profile fails.
 
@@ -107,7 +98,7 @@ This function allows for complex transformations of existing data.
 > the thread will be killed and the promise will reject.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves with the newly computed value after successfully updating it in the player's profile.
 	This ensures that the calling code can immediately use the updated value.
 - Rejects if the update process fails.
@@ -140,7 +131,7 @@ end)
 - `increment: number` - The amount to increment the value by.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves with the newly computed value after successfully updating it in the player's profile.
 This ensures that the calling code can immediately use the updated value.
 - Rejects if the increment process fails.
@@ -157,7 +148,7 @@ end)
 ## GetValueChangedSignal
 
 ### Description
-Creates and returns a `Signal` that is fired when a specified key's value changes in the player's profile.
+Creates and returns a signal that is fired when a specified key's value changes in the player's profile.
 This operation is dependent on the successful loading of the player's profile.
 The signal passes the new and previous values of the observed key.
 
@@ -166,7 +157,7 @@ The signal passes the new and previous values of the observed key.
 - `key: string` - The profile key to monitor for changes.
 
 ### Return Value
-Returns a `Promise` that resolves with a `Signal` object.
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that resolves with a [`Signal`](https://sleitnick.github.io/RbxUtil/api/Signal/) object.
 The resolved signal can then be connected to functions that will be called with the new and previous values of the key whenever it changes.
 The promise is rejected if the player's profile cannot be loaded.
 
@@ -186,7 +177,7 @@ end)
 > [!NOTE]
 > The `Signal` is only available after the player's profile has been successfully loaded.
 > It does not fire for the initial load of the profile's data.
-> For initial data handling, other methods like [`BindToValue()`](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#bindtovalue) should be considered.
+> For initial data handling, other methods like [`BindToValue()`](./DOCUMENTATION.md#bindtovalue) should be considered.
 
 ## BindToValue
 
@@ -201,7 +192,7 @@ updates in the player's profile.
 	for updates after the initial call, the previous value. For the initial invocation, `oldValue` will not be provided.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves once the callback has been successfully registered and invoked with the current value of the key.
 - Rejects if the player's profile cannot be loaded or the key does not exist.
 
@@ -226,7 +217,8 @@ end)
 
 ### Description
 Prepares a player's profile for teleportation by ensuring it is properly released and ready to be loaded in a new game instance. `OnHopClear` utilizes
-`Profile:ListenToHopReady()` from the ProfileService module to monitor and manage the profile's readiness for a hop. This function returns a promise that
+[`Profile:ListenToHopReady()`](https://madstudioroblox.github.io/ProfileService/api/#profilelistentohopready)
+from the ProfileService module to monitor and manage the profile's readiness for a hop. This function returns a promise that
 resolves once the profile is adequately prepared, optimizing the teleportation process, especially useful when navigating noticeable delays in profile
 loading after universe teleports.
 
@@ -234,7 +226,7 @@ loading after universe teleports.
 - `player: Player` - The player whose profile is to be prepared for a hop.
 
 ### Return Value
-Returns a `Promise` that:
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
 - Resolves when the player's profile has been successfully released and is ready for loading in a new game instance, facilitating seamless teleportation.
 - Rejects if the player leaves the game before the promise resolves. It is recommended to account for this scenario in your implementation to handle
 	potential errors gracefully.
@@ -308,7 +300,7 @@ UserVaultServer.ReleaseProfile(player, true)
 ```
 > [!TIP]
 > Utilizing `dontKick` with `true` is essential for teleportation scenarios, ensuring players aren't forcibly exited from the game after their profile
-> release. To handle edge cases, such as players not leaving after a certain period or teleportation failing, it's advisable to use `Promise:timeout()`
+> release. To handle edge cases, such as players not leaving after a certain period or teleportation failing, it's advisable to use [`Promise:timeout()`](https://eryn.io/roblox-lua-promise/api/Promise/#timeout)
 > with this process. This approach allows for the implementation of a fallback mechanism, ensuring that if the player does not leave the game within a
 > specified timeout period, the game can take appropriate action, such as forcibly removing the player or logging an error for further investigation.
 
@@ -354,7 +346,7 @@ needs and should be called once before starting Knit.
 		- `5` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
 	- `DebugUseMock: boolean` (optional) - Enables the use of a mock profile store in Studio, allowing for safe testing without affecting live data.
 		Defaults to true.
-	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in [`UpdateValue()`](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#updateplayerdata) return `nil` values, helping identify unintended data
+	- `WarnNilUpdate: boolean` (optional) - Emits warnings when callbacks in [`UpdateValue()`](./DOCUMENTATION.md#updatevalue) return `nil` values, helping identify unintended data
 		erasures. Defaults to true.
 	- `ProfileStoreIndex: string` (optional) - Custom identifier for the profile store, overriding the default. Useful for differentiating between
 		multiple stores or testing environments.

@@ -1,45 +1,39 @@
-# UserVaultClient Documentation
+![UserVault Logo](/logo/Small/UserVault.png)
 
-- [DataReady](./DOCUMENTATION.md#dataready)
-- [GetDataReadySignal](./DOCUMENTATION.md#getdatareadysignal)
-- [GetState](./DOCUMENTATION.md#getstate)
-- [GetValue](./DOCUMENTATION.md#getvalue)
-- [GetValueChangedSignal](./DOCUMENTATION.md#getvaluechangedsignal)
-- [BindToValue](./DOCUMENTATION.md#bindtovalue)
-- [Start](./DOCUMENTATION.md#start)
+# UserVaultClient
 
-# DataReady
+## DataReady
 
-## Description
+### Description
 Returns a boolean flag indicating if the client's data is ready for consumption.
 
 > [!TIP]
-> Pairs well with `GetDataReadySignal()`
+> Pairs well with [`GetDataReadySignal()`](./DOCUMENTATION.md#getdatareadysignal)
 
-# GetDataReadySignal
+## GetDataReadySignal
 
-## Description
-Returns a `Signal` which fires when the client's data becomes ready for consuption.
+### Description
+Returns a signal which fires when the client's data becomes ready for consuption.
 
 > [!WARNING]
 > The returned signal will not fire if the function is called after the data is already ready.
-> Use `DataReady()` before waiting for this signal.
+> Use [`DataReady()`](./DOCUMENTATION.md#dataready) before waiting for this signal.
 
-# GetState
+## GetState
 
-## Description
+### Description
 Returns a read-only state object representing a value in the player's data profile.
 The value of the state object is updated automatically.
 
-## Parameters
+### Parameters
 - `key: string` - The key of the value to retrieve.
 - `defaultValue: any` (optional) - A default value for the state object to resolve to.
 	This value will be used until the player profile has been loaded and received by the client, at which time the true value will take its place.
 
-## Return Value
+### Return Value
 Returns a `Computed` state object from the [Fusion](https://elttob.uk/Fusion) library.
 
-## Usage Examples
+### Usage Examples
 ```lua
 	local coinsValue = UserVault.GetState("Coins", 0)
 	local coinsLabel = Fusion.New "TextLabel" {
@@ -47,12 +41,12 @@ Returns a `Computed` state object from the [Fusion](https://elttob.uk/Fusion) li
 	}
 ```
 
-# GetValue
+## GetValue
 
-## Description
+### Description
 Retrieves specified values from the client's profile.
 
-## Parameters
+### Parameters
 This function supports three parameter formats:
 
 - `GetValue(keys: {string})`: Uses an array of keys to retrieve specific values.
@@ -63,14 +57,14 @@ This function supports three parameter formats:
 
 - `GetValue()`: Does not retrieve any values, but can be used to check if the profile has loaded.
 
-## Return Value
-Returns a `Promise` that resolves with the requested values.
+### Return Value
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that resolves with the requested values.
 When `keys` is an array, the promise resolves with a dictionary mapping each key to its value.
 When using varargs, the promise resolves with the values directly.
 
-## Usage Examples
+### Usage Examples
 
-### Array Example
+#### Array Example
 Retrieve values using an array of keys `"Coins"` and `"Level"`.
 The promise resolves with a dictionary containing the values for these keys.
 ```lua
@@ -79,7 +73,7 @@ UserVault.GetValue({"Coins", "Level"}):andThen(function(data)
 end)
 ```
 
-### Vararg Example
+#### Vararg Example
 Retrieve values using varargs `"Coins"` and `"Level"`.
 The promise resolves with the values for these keys in order.
 ```lua
@@ -91,20 +85,20 @@ end)
 > [!TIP]
 > GetValues() is a valid alias for GetValue()
 
-# GetValueChangedSignal
+## GetValueChangedSignal
 
-## Description
-Creates and returns a `Signal` that is fired when a specified key's value changes in the client's profile.
+### Description
+Creates and returns a signal that is fired when a specified key's value changes in the client's profile.
 The signal passes the new and previous values of the observed key.
 
-## Parameters
+### Parameters
 - `key: string` - The profile key to monitor for changes.
 
-## Return Value
-Returns a `Promise` that resolves with a `Signal` object.
+### Return Value
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that resolves with a [`Signal`](https://sleitnick.github.io/RbxUtil/api/Signal/) object.
 The resolved signal can then be connected to functions that will be called with the new and previous values of the key whenever it changes.
 
-## Usage Examples
+### Usage Examples
 ```lua
 UserVault.GetValueChangedSignal("Coins")
 :andThen(function(signal)
@@ -115,25 +109,25 @@ end)
 ```
 
 > [!NOTE]
-> The Signal is only available after the player's profile has been successfully loaded.
+> The signal is only available after the player's profile has been successfully loaded.
 > It does not fire for the initial load of the profile's data.
 > For initial data handling, other methods like `BindToValue()` should be considered.
 
-# BindToValue
+## BindToValue
 
-## Description
+### Description
 Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
 updates in the client's profile.
 
-## Parameters
+### Parameters
 - `key: string` - The key within the client's profile to watch for changes.
 - `callback: (newValue: any, oldValue: any?) -> ()` - A callback function that is executed with the new value of the key and,
 	for updates after the initial call, the previous value. For the initial invocation, `oldValue` will not be provided.
 
-## Return Value
-Returns a `Promise` that resolves once the callback has been registered and invoked with the current value of the key.
+### Return Value
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that resolves once the callback has been registered and invoked with the current value of the key.
 
-## Usage Examples
+### Usage Examples
 ```lua
 -- Bind to monitor and reflect changes in 'Coins' in a `TextLabel`.
 UserVault.BindToValue("Coins", function(newValue, oldValue)
@@ -150,13 +144,13 @@ end)
 > The immediate invocation of the callback provides an opportunity to initialize any dependent data or UI elements with the current value of the
 > specified key. Subsequent invocations facilitate real-time updates, enabling dynamic content adjustments based on the player's data changes.
 
-# Start
+## Start
 
-## Description
+### Description
 Initializes UserVaultClient with the provided configuration. This function is essential for setting up the module's behavior according to your game's
 needs and should be called once before starting Knit.
 
-## Parameters
+### Parameters
 - `config: table` - Configuration options for UserVaultClient.
 	- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
 		operations.
@@ -167,7 +161,7 @@ needs and should be called once before starting Knit.
 	- `UseFusion3: boolean` (optional) - Determines whether Fusion objects adhere to v0.3.0 (true) or default to v0.2.0 (false).
 		Choosing v0.3.0 may offer enhanced features or performance improvements tailored to specific project requirements.
 
-## Usage Examples
+### Usage Examples
 ```lua
 UserVaultClient.Start({
 	VerboseLevel = 2,
