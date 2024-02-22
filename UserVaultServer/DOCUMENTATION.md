@@ -1,15 +1,15 @@
 # UserVaultServer Documentation
 
-- [GetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvalue)
-- [SetValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#setvalue)
-- [UpdateValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#updatevalue)
-- [IncrementValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#incrementvalue)
-- [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#getvaluechangedsignal)
-- [BindToValue](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#bindtovalue)
-- [OnHopClear](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#onhopclear)
-- [ReleaseProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#releaseprofile)
-- [ResetProfile](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#resetprofile)
-- [Start](https://github.com/rodrick160/UserVault/blob/main/UserVaultServer/DOCUMENTATION.md#start)
+- [GetValue](./DOCUMENTATION.md#getvalue)
+- [SetValue](./DOCUMENTATION.md#setvalue)
+- [UpdateValue](./DOCUMENTATION.md#updatevalue)
+- [IncrementValue](./DOCUMENTATION.md#incrementvalue)
+- [GetValueChangedSignal](./DOCUMENTATION.md#getvaluechangedsignal)
+- [BindToValue](./DOCUMENTATION.md#bindtovalue)
+- [OnHopClear](./DOCUMENTATION.md#onhopclear)
+- [ReleaseProfile](./DOCUMENTATION.md#releaseprofile)
+- [ResetProfile](./DOCUMENTATION.md#resetprofile)
+- [Start](./DOCUMENTATION.md#start)
 
 ## GetValue
 
