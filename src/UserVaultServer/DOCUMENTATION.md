@@ -74,8 +74,8 @@ UserVaultServer.Start({
 ### Description
 Retrieves specified data from the player's profile.
 
-### Parameters
-This function supports three parameter formats:
+## Parameters
+This function supports two parameter formats:
 
 - `GetValue(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
 	- `player: Player` - The target player.
@@ -84,9 +84,6 @@ This function supports three parameter formats:
 - `GetValue(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
 	- `player: Player` - The target player.
 	- `...: string` - The data keys to retrieve.
-
-- `GetValue(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
-	- `player: Player` - The target player.
 
 ### Return Value
 Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
@@ -394,3 +391,16 @@ UserVaultServer.ResetProfile(123456789)
 
 > [!CAUTION]
 > Resetting a profile is permanent and cannot be undone.
+
+## PlayerReady
+
+### Description
+Returns a promise which resolves when the player's data is ready.
+
+### Parameters
+- `player: Player` - The target player.
+
+### Return Value
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that:
+- Resolves upon successfully loading the player profile.
+- Rejects if the player profile cannot be loaded.

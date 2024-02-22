@@ -349,7 +349,7 @@ end
 	Retrieves specified values from the player's profile.
 
 	## Parameters
-	This function supports three parameter formats:
+	This function supports two parameter formats:
 
 	- `GetValue(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
 		- `player: Player` - The target player.
@@ -358,9 +358,6 @@ end
 	- `GetValue(player: Player, ...: string)`: Uses a variable number of arguments to specify the data keys.
 		- `player: Player` - The target player.
 		- `...: string` - The data keys to retrieve.
-
-	- `GetValue(player: Player)`: Does not retrieve any values, but can be used to check if the profile has loaded.
-		- `player: Player` - The target player.
 
 	## Return Value
 	Returns a `Promise` that:
@@ -397,12 +394,19 @@ end
 ]]
 function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
 
-	debugPrint(3, `Getting values for {player}:`, ...)
 	local args = {...}
-
 	local isTable = typeof(args[1]) == "table"
 	local keys = if isTable then args[1] else args
+	assert(keys[1] ~= nil, "must pass at least one key.")
+
+	for _, key in keys do
+		assert(typeof(key) == "string", "keys must be strings.")
+	end
+
+	debugPrint(3, `Getting values for {player}:`, ...)
+
 	return Promise.new(function(resolve, reject)
 		debugPrint(5, `Waiting for player data`)
 		waitForPlayerLoaded(player)
@@ -428,7 +432,7 @@ function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promi
 			end
 		else
 			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player.DisplayName}.`)
+			reject(`Failed to retrieve profile for player {player}.`)
 		end
 	end)
 end
@@ -461,6 +465,8 @@ UserVaultServer.GetValues = UserVaultServer.GetValue
 ]]
 function UserVaultServer.SetValue(player: Player, key: string, value: any): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(typeof(key) == "string", "key must be a string.")
 
 	debugPrint(2, `Setting value for {player} ({key} = {value})`)
 
@@ -474,7 +480,7 @@ function UserVaultServer.SetValue(player: Player, key: string, value: any): Prom
 			resolve(setValue(playerCache, key, value))
 		else
 			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player.DisplayName}.`)
+			reject(`Failed to retrieve profile for player {player}.`)
 		end
 	end)
 end
@@ -518,6 +524,9 @@ end
 ]]
 function UserVaultServer.UpdateValue(player: Player, key: string, callback: (value: any) -> any): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(typeof(key) == "string", "key must be a string.")
+	assert(typeof(callback) == "function", "callback must be a function.")
 
 	debugPrint(2, `Updating value for {player} ({key})`)
 
@@ -538,7 +547,7 @@ function UserVaultServer.UpdateValue(player: Player, key: string, callback: (val
 			end))
 		else
 			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player.DisplayName}.`)
+			reject(`Failed to retrieve profile for player {player}.`)
 		end
 	end)
 end
@@ -577,6 +586,9 @@ end
 ]]
 function UserVaultServer.IncrementValue(player: Player, key: string, increment: number): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(typeof(key) == "string", "key must be a string.")
+	assert(typeof(increment) == "number", "increment must be a number.")
 
 	debugPrint(2, `Incrementing value for {player} ({key} += {increment})`)
 
@@ -622,6 +634,8 @@ end
 ]]
 function UserVaultServer.GetValueChangedSignal(player: Player, key: string): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(typeof(key) == "string", "key must be a string.")
 
 	debugPrint(3, `Getting value changed signal for {player} ({key})`)
 
@@ -641,7 +655,7 @@ function UserVaultServer.GetValueChangedSignal(player: Player, key: string): Pro
 			resolve(signal)
 		else
 			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player.DisplayName}.`)
+			reject(`Failed to retrieve profile for player {player}.`)
 		end
 	end)
 end
@@ -683,6 +697,9 @@ end
 ]]
 function UserVaultServer.BindToValue(player: Player, key: string, callback: (newValue: any, oldValue: any?) -> ()): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(typeof(key) == "string", "key must be a string.")
+	assert(typeof(callback) == "function", "callback must be a function.")
 
 	debugPrint(3, `Binding to {player}'s data ({key})`)
 
@@ -732,6 +749,7 @@ end
 ]]
 function UserVaultServer.OnHopClear(player: Player): Promise
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
 
 	debugPrint(3, `Getting hop clear promise for {player}`)
 
@@ -830,6 +848,8 @@ end
 ]]
 function UserVaultServer.ReleaseProfile(player: Player, dontKick: boolean?)
 	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+	assert(dontKick == nil or typeof(dontKick) == "boolean", "dontKick must be nil or boolean.")
 
 	debugPrint(3, `Externally releasing profile for {player} (dontKick = {dontKick})`)
 
@@ -873,11 +893,48 @@ function UserVaultServer.ResetProfile(userId: number, profileStoreIndex: string?
 	if not RunService:IsStudio() then
 		error("ResetProfile() must be called from Roblox Studio.")
 	end
+	assert(typeof(userId) == "number", "userId must be a number.")
+	assert(profileStoreIndex == nil or typeof(profileStoreIndex) == "string", "profileStoreIndex must be nil or string.")
 
 	profileStoreIndex = profileStoreIndex or DEFAULT_CONFIG.ProfileStoreIndex
 
 	local store = ProfileService.GetProfileStore(profileStoreIndex, {})
 	store:WipeProfileAsync(PROFILE_KEY_FORMAT:format(userId))
+end
+
+--[[
+	# [PlayerReady](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultServer/DOCUMENTATION.md#playerready)
+
+	## Description
+	Returns a promise which resolves when the player's data is ready.
+
+	## Parameters
+	- `player: Player` - The target player.
+
+	## Return Value
+	Returns a `Promise` that:
+	- Resolves upon successfully loading the player profile.
+	- Rejects if the player profile cannot be loaded.
+]]
+function UserVaultServer.PlayerReady(player: Player): Promise
+	checkStarted()
+	assert(typeof(player) == "Instance" and player:IsA("Player"), "player must be a Player.")
+
+	debugPrint(5, `Waiting for {player} ready`)
+
+	return Promise.new(function(resolve, reject)
+		debugPrint(5, `Waiting for player data`)
+		waitForPlayerLoaded(player)
+
+		local playerCache = playerCaches[player]
+		if playerCache and playerCache.Profile:IsActive() then
+			debugPrint(5, `Player data found`)
+			resolve()
+		else
+			debugPrint(5, `Player data not found`)
+			reject(`Failed to retrieve profile for player {player}.`)
+		end
+	end)
 end
 
 --[[
