@@ -226,7 +226,7 @@ local function setValue(playerCache: PlayerCache, key: string, value: any): Prom
 
 		if playerCache.ValueChangedSignals[key] then
 			debugPrint(5, `Firing data changed signal`)
-			playerCache.ValueChangedSignals[key]:Fire(oldValue, value)
+			playerCache.ValueChangedSignals[key]:Fire(value, oldValue)
 		end
 
 		debugPrint(4, `Success`)
