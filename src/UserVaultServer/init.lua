@@ -156,7 +156,7 @@ end
 --[[
 	Retrives a value from the player profile.
 ]]
-local function getValue(playerCache: PlayerCache, key: string): Promise
+local function getValue(playerCache: PlayerCache, key: string, readOnly: boolean?): Promise
 	debugPrint(4, `Getting value`)
 
 	return Promise.new(function(resolve, reject)
@@ -172,7 +172,7 @@ local function getValue(playerCache: PlayerCache, key: string): Promise
 			reject(`Attempt to index profile with invalid key '{key}'`)
 			return
 		end
-		if typeof(value) == "table" then
+		if readOnly and typeof(value) == "table" then
 			value = TableUtil.Lock(TableUtil.Copy(value, true))
 			debugPrint(5, `table value detected, made read-only copy`)
 		end
@@ -416,7 +416,7 @@ function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promi
 			debugPrint(5, `Player data found`)
 			local values = {}
 			for _, key in keys do
-				local value = getValue(playerCache, key):expect()
+				local value = getValue(playerCache, key, true):expect()
 				if isTable then
 					values[key] = value
 				else
@@ -537,7 +537,7 @@ function UserVaultServer.UpdateValue(player: Player, key: string, callback: (val
 		local playerCache = playerCaches[player]
 		if playerCache and playerCache.Profile:IsActive() then
 			debugPrint(5, `Player data found`)
-			resolve(getValue(playerCache, key)
+			resolve(getValue(playerCache, key, false)
 			:andThen(function(oldValue)
 				local newValue = assertNoYield(callback, oldValue)
 				if currentConfig.WarnNilUpdate and newValue == nil then
