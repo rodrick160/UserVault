@@ -543,7 +543,11 @@ function UserVaultServer.UpdateValue(player: Player, key: string, callback: (val
 				if currentConfig.WarnNilUpdate and newValue == nil then
 					warn("UpdateValue callback returned a nil value\n", debug.traceback())
 				end
-				return setValue(playerCache, key, newValue)
+				setValue(playerCache, key, newValue)
+				if typeof(newValue) == "table" then
+					newValue = TableUtil.Lock(TableUtil.Copy(newValue, true))
+				end
+				return newValue
 			end))
 		else
 			debugPrint(5, `Player data not found`)
