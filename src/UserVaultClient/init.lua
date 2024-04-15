@@ -453,6 +453,7 @@ function UserVaultClient.Start(config: UserVaultConfig)
 		end
 
 		debugPrint(1, `Player data ready`)
+		dataReady = true
 		dataReadyValue:set(true)
 		dataReadySignal:Fire()
 	end)
