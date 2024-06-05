@@ -10,7 +10,7 @@ UserVault is a DataStore module built on ProfileService which provides safe and 
 
 Add UserVault to your [Wally](https://github.com/UpliftGames/wally) packages:
 
-`rodrick160/uservault@0.2.13`
+`rodrick160/uservault@0.2.14`
 
 ## Setup
 

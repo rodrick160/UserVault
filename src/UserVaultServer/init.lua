@@ -71,7 +71,7 @@ type DataChange = {
 type Profile = ProfileService.Profile<table>
 type ProfileStore = ProfileService.ProfileStore
 
-type Promise = typeof(Promise)
+type Promise = typeof(Promise.new())
 type Signal = Signal.Signal
 
 --\\ Private //--

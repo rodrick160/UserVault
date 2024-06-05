@@ -52,7 +52,7 @@ type UserVaultConfig = {
 type Computed<T> = Fusion2.Computed<T> | Fusion3.Computed<T>
 type Value<T> = Fusion2.Value<T> | Fusion3.Value<T>
 
-type Promise = typeof(Promise)
+type Promise = typeof(Promise.new())
 
 type Signal = Signal.Signal
 
