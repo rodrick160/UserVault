@@ -74,7 +74,7 @@ UserVaultServer.Start({
 ### Description
 Retrieves specified data from the player's profile.
 
-## Parameters
+### Parameters
 This function supports two parameter formats:
 
 - `GetValue(player: Player, keys: {string})`: Uses an array of keys to retrieve specific player data.
