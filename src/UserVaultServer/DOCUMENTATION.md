@@ -69,6 +69,52 @@ UserVaultServer.Start({
 > [!NOTE]
 > The default profile store key is `"PlayerData"`
 
+## PerformTransaction
+
+### Description
+Performs an atomic operation on one or multiple players' profiles. The callback function is passed a tuple of `Vault` objects, one for each player, which can
+be used to access the profile data. The `Vault` object has two functions:
+
+- `GetValue(key: string) -> any`:
+	Returns the value at the given key.
+- `SetValue(key: string, value: any)`:
+	Assigns the value at the given key, and triggers an update.
+
+Any changes made to the `Vault` objects are not applied to the players' profiles until the entire transaction is complete. If the transaction fails or is canceled
+at any point before completion, all changes made to the `Vault` objects are discarded.
+
+Beginning a transaction locks player profiles until the transaction is concluded. Any subsequent attempts to access the player's profile will yield until the
+blocking transaction has concluded.
+
+> [!WARNING]
+> All access to a player's profile will be blocked until the transaction concludes. Ensure that transaction callbacks will not yield indefinitely.
+
+### Parameters
+- `callback: (...Vault) -> ()` - The callback function which performs the transaction.
+- `...: Player` - A vararg of Players to include in the transaction. The `Vault` objects passed to the callback be in the same respective order as the Players passed here.
+
+### Return Value
+Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) which resolves with any values returned from the callback function, once the transaction is complete.
+
+### Usage Examples
+```lua
+	UserVault.PerformTransaction(function(vault)
+		local coins = vault:GetValue("Coins")
+		local inventory = vault:GetValue("Inventory")
+
+		if coins < 100 then return end
+
+		if inventory.Sword then
+			inventory.Sword += 1
+		else
+			inventory.Sword = 1
+		end
+
+		vault:SetValue("Coins", coins - 100)
+		vault:SetValue("Inventory", inventory)	-- Ensure table values get updated
+	end, player)
+```
+
 ## GetValue
 
 ### Description

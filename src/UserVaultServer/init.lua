@@ -62,10 +62,24 @@ type PlayerCache = {
 	DataChangeQueue: {[string]: DataChange},
 	ProcessDataQueueSignal: Signal,
 	ReadyForHop: boolean,
+	ActiveVault: Vault?,
 }
 type DataChange = {
 	Old: any,
 	New: any,
+}
+
+type VaultAccessor = {
+	GetValue: (self: VaultAccessor, key: string) -> any,
+	SetValue: (self: VaultAccessor, key: string, value: any) -> (),
+}
+type Vault = {
+	Accessor: VaultAccessor,
+	Cache: PlayerCache,
+	Data: table,
+	SharedDataChangeQueue: {[string]: DataChange},
+	ServerDataChangeQueue: {[string]: DataChange},
+	Promise: Promise,
 }
 
 type Profile = ProfileService.Profile<table>
@@ -133,108 +147,6 @@ local function waitForPlayerLoaded(player: Player)
 end
 
 --[[
-	Wrapper function.
-	Errors if the callback function yields.
-]]
-local function assertNoYield(callback: (any...) -> any..., ...: any...): any...
-	debugPrint(4, `Callback running with no-yield assertion`)
-
-	local thread = coroutine.create(callback)
-	local returnValues = table.pack(coroutine.resume(thread, ...))
-	table.remove(returnValues, 1)
-
-	if coroutine.status(thread) ~= "dead" then
-		task.cancel(thread)
-		debugPrint(4, `Failed`)
-		error("Callback function illegally yielded while attempting to modify data.", 3)
-	end
-
-	debugPrint(4, `Success`)
-	return table.unpack(returnValues)
-end
-
---[[
-	Retrives a value from the player profile.
-]]
-local function getValue(playerCache: PlayerCache, key: string, readOnly: boolean?): Promise
-	debugPrint(4, `Getting value`)
-
-	return Promise.new(function(resolve, reject)
-		local value
-		if currentConfig.PlayerDataTemplate.Shared[key] ~= nil then
-			value = playerCache.Profile.Data.Shared[key]
-			debugPrint(5, `Shared value: {value}`)
-		elseif currentConfig.PlayerDataTemplate.Server[key] ~= nil then
-			value = playerCache.Profile.Data.Server[key]
-			debugPrint(5, `Server value: {value}`)
-		else
-			debugPrint(4, `Failed`)
-			reject(`Attempt to index profile with invalid key '{key}'`)
-			return
-		end
-		if readOnly and typeof(value) == "table" then
-			value = TableUtil.Lock(TableUtil.Copy(value, true))
-			debugPrint(5, `table value detected, made read-only copy`)
-		end
-		debugPrint(4, `Success`)
-		resolve(value)
-	end)
-end
-
---[[
-	Assigns a value in the player profile.
-]]
-local function setValue(playerCache: PlayerCache, key: string, value: any): Promise
-	debugPrint(4, `Setting value`)
-
-	return Promise.new(function(resolve, reject)
-		local oldValue
-		if currentConfig.PlayerDataTemplate.Shared[key] ~= nil then
-			oldValue = playerCache.Profile.Data.Shared[key]
-			playerCache.Profile.Data.Shared[key] = value
-			debugPrint(5, `Shared value: {oldValue}`)
-
-			local change = playerCache.DataChangeQueue[key]
-			if change then
-				debugPrint(5, `Existing change replication found`)
-				if change.Old == value then
-					debugPrint(5, `Removing existing change replication`)
-					playerCache.DataChangeQueue[key] = nil
-				else
-					debugPrint(5, `Modifying exising change replication`)
-					change.New = value
-				end
-			else
-				debugPrint(5, `Queueing new change replication`)
-				if not next(playerCache.DataChangeQueue) then
-					playerCache.ProcessDataQueueSignal:FireDeferred()
-				end
-
-				change = {Old = oldValue, New = value}
-				playerCache.DataChangeQueue[key] = change
-			end
-
-		elseif currentConfig.PlayerDataTemplate.Server[key] ~= nil then
-			oldValue = playerCache.Profile.Data.Server[key]
-			playerCache.Profile.Data.Server[key] = value
-			debugPrint(5, `Server value: {oldValue}`)
-		else
-			debugPrint(4, `Failed`)
-			reject(`Attempt to index profile with invalid key '{key}'`)
-			return
-		end
-
-		if playerCache.ValueChangedSignals[key] then
-			debugPrint(5, `Firing data changed signal`)
-			playerCache.ValueChangedSignals[key]:Fire(value, oldValue)
-		end
-
-		debugPrint(4, `Success`)
-		resolve(value)
-	end)
-end
-
---[[
 	Updates the data table to the newest version using the update functions, one version at a time.
 ]]
 local function updateProfileData(data: table)
@@ -270,10 +182,15 @@ local function loadProfile(player: Player)
 			local playerCache = playerCaches[player]
 			if playerCache then
 				debugPrint(5, `Player cache found`)
+				if playerCache.ActiveVault then
+					playerCache.ActiveVault.Promise:cancel()
+				end
+
 				for _, signal in playerCache.ValueChangedSignals do
 					signal:Destroy()
 				end
 				playerCache.ProcessDataQueueSignal:Destroy()
+
 				playerCaches[player] = nil
 			end
 
@@ -340,7 +257,234 @@ local function loadProfile(player: Player)
 	end
 end
 
+local function createVault(player: Player): Vault
+	debugPrint(5, `Waiting for data for player {player}`)
+	waitForPlayerLoaded(player)
+
+	local playerCache = playerCaches[player]
+	if not playerCache or not playerCache.Profile:IsActive() then
+		error(`Failed to retrieve profile for player {player}.`)
+		return
+	end
+
+	local vault: Vault = {
+		Cache = playerCache,
+		Data = TableUtil.Copy(playerCache.Profile.Data, true),
+		SharedDataChangeQueue = {},
+		ServerDataChangeQueue = {},
+	}
+
+	local vaultAccessor: VaultAccessor = {_locked = false}
+	vault.Accessor = vaultAccessor
+
+	function vaultAccessor:GetValue(key: string)
+		debugPrint(3, `Getting value "{key}" for player {player}`)
+		if self._locked then
+			error("Attempt to access locked Vault object.", 2)
+		end
+
+		local value
+		if currentConfig.PlayerDataTemplate.Shared[key] ~= nil then
+			value = vault.Data.Shared[key]
+			debugPrint(5, `Shared value: {value}`)
+		elseif currentConfig.PlayerDataTemplate.Server[key] ~= nil then
+			value = vault.Data.Server[key]
+			debugPrint(5, `Server value: {value}`)
+		else
+			error(`Attempt to index profile with invalid key '{key}'`)
+			return
+		end
+
+		debugPrint(4, `Success`)
+		return value
+	end
+	function vaultAccessor:SetValue(key: string, value: any)
+		debugPrint(3, `Setting value "{key}" to {value} for player {player}`)
+		if self._locked then
+			error("Attempt to access locked Vault object.", 2)
+		end
+
+		local oldValue, changeQueue
+		if currentConfig.PlayerDataTemplate.Shared[key] ~= nil then
+			oldValue = vault.Data.Shared[key]
+			changeQueue = vault.SharedDataChangeQueue
+			vault.Data.Shared[key] = value
+			debugPrint(5, `Shared value: {oldValue}`)
+		elseif currentConfig.PlayerDataTemplate.Server[key] ~= nil then
+			oldValue = vault.Data.Server[key]
+			changeQueue = vault.ServerDataChangeQueue
+			vault.Data.Server[key] = value
+			debugPrint(5, `Server value: {oldValue}`)
+		else
+			debugPrint(4, `Failed`)
+			error(`Attempt to index profile with invalid key '{key}'`)
+		end
+
+		local change = changeQueue[key]
+		if change then
+			debugPrint(5, `Existing change found`)
+			if change.Old == value then
+				debugPrint(5, `Removing existing change`)
+				changeQueue[key] = nil
+			else
+				debugPrint(5, `Modifying exising change`)
+				change.New = value
+			end
+		else
+			debugPrint(5, `Queueing new change`)
+			changeQueue[key] = {Old = oldValue, New = value}
+		end
+
+		debugPrint(4, `Success`)
+		vault.Data[key] = value
+	end
+
+	return vault
+end
+
 --\\ Public //--
+
+--[[
+	# [PerformTransaction](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultServer/DOCUMENTATION.md#performtransaction)
+
+	## Description
+	Performs an atomic operation on one or multiple players' profiles. The callback function is passed a tuple of `Vault` objects, one for each player, which can
+	be used to access the profile data. The `Vault` object has two functions:
+
+	- `GetValue(key: string) -> any`:
+		Returns the value at the given key.
+	- `SetValue(key: string, value: any)`:
+		Assigns the value at the given key, and triggers an update.
+
+	Any changes made to the `Vault` objects are not applied to the players' profiles until the entire transaction is complete. If the transaction fails or is canceled
+	at any point before completion, all changes made to the `Vault` objects are discarded.
+
+	Beginning a transaction locks player profiles until the transaction is concluded. Any subsequent attempts to access the player's profile will yield until the
+	blocking transaction has concluded.
+
+	> [!WARNING]
+	> All access to a player's profile will be blocked until the transaction concludes. Ensure that transaction callbacks will not yield indefinitely.
+
+	## Parameters
+	- `callback: (...Vault) -> ()` - The callback function which performs the transaction.
+	- `...: Player` - A vararg of Players to include in the transaction. The `Vault` objects passed to the callback be in the same respective order as the Players passed here.
+
+	## Return Value
+	Returns a `Promise` which resolves with any values returned from the callback function, once the transaction is complete.
+
+	## Usage Examples
+	```lua
+		UserVault.PerformTransaction(function(vault)
+			local coins = vault:GetValue("Coins")
+			local inventory = vault:GetValue("Inventory")
+
+			if coins < 100 then return end
+
+			if inventory.Sword then
+				inventory.Sword += 1
+			else
+				inventory.Sword = 1
+			end
+
+			vault:SetValue("Coins", coins - 100)
+			vault:SetValue("Inventory", inventory)	-- Ensure table values get updated
+		end, player)
+	```
+]]
+function UserVaultServer.PerformTransaction(callback: (...VaultAccessor) -> (), ...: Player): Promise
+	checkStarted()
+	assert(typeof(callback) == "function", "operation must be a function.")
+
+	local players = {...}
+	assert(#players > 0, "Must pass at least one Player.")
+	for _, player in players do
+		assert(typeof(player) == "Instance" and player:IsA("Player"), "vararg parameters must all be Players.")
+	end
+
+	debugPrint(2, `Performing transaction with players`, ...)
+
+	local vaultPromises = {}
+	for i, player: Player in players do
+		vaultPromises[i] = Promise.new(function(resolve)
+			debugPrint(5, `Waiting for data for player {player}`)
+			waitForPlayerLoaded(player)
+
+			local vault = createVault(player)
+
+			if vault.Cache.ActiveVault then
+				debugPrint(5, `Waiting for existing vault promise to finish`)
+				vault.Cache.ActiveVault.Promise:await()
+			end
+			vault.Cache.ActiveVault = vault
+
+			resolve(vault)
+		end)
+	end
+
+	local promise
+	promise = Promise.all(vaultPromises)
+	:andThen(function(vaults: {Vault})
+		debugPrint(5, `VaultInternals gathered, verifying profiles are active`)
+		local vaultAccessors: {VaultAccessor} = {}
+		for i, vault in vaults do
+			if not vault.Cache.Profile:IsActive() then
+				debugPrint(5, `Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
+				return Promise.reject(`Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
+			end
+			vault.Promise = promise
+			vaultAccessors[i] = vault.Accessor
+		end
+
+		debugPrint(5, `Beginning change operation`)
+		local result = callback(table.unpack(vaultAccessors))
+		debugPrint(5, `Success`)
+
+		debugPrint(5, `Verifying profiles are still active`)
+		for _, vault in vaults do
+			if not vault.Cache.Profile:IsActive() then
+				debugPrint(5, `Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
+				return Promise.reject(`Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
+			end
+		end
+
+		debugPrint(5, `Saving changes to profiles`)
+		for _, vault in vaults do
+			vault.Cache.Profile.Data = vault.Data
+			vault.Cache.DataChangeQueue = vault.SharedDataChangeQueue
+			vault.Cache.ProcessDataQueueSignal:FireDeferred()
+		end
+
+		debugPrint(5, `Firing changed events for all profiles`)
+		for _, vault in vaults do
+			local function fireChanges(changeQueue)
+				for key, change in changeQueue do
+					local changedSignal = vault.Cache.ValueChangedSignals[key]
+					if changedSignal then
+						changedSignal:Fire(change.New, change.Old)
+					end
+				end
+			end
+			fireChanges(vault.SharedDataChangeQueue)
+			fireChanges(vault.ServerDataChangeQueue)
+		end
+
+		return result
+	end)
+
+	promise
+	:finally(function()
+		debugPrint(5, `Locking and releasing vaults`)
+		Promise.each(vaultPromises, function(vault: Vault)
+			vault.Accessor._locked = true
+		end)
+		for _, player in players do
+			if not playerCaches[player] then continue end
+			playerCaches[player].ActiveVault = nil
+		end
+	end)
+
+	return promise
+end
 
 --[[
 	# [GetValue](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultServer/DOCUMENTATION.md#getvalue)
@@ -407,34 +551,20 @@ function UserVaultServer.GetValue(player: Player, ...: {string} | string): Promi
 
 	debugPrint(3, `Getting values for {player}:`, ...)
 
-	return Promise.new(function(resolve, reject)
-		debugPrint(5, `Waiting for player data`)
-		waitForPlayerLoaded(player)
-
-		local playerCache = playerCaches[player]
-		if playerCache and playerCache.Profile:IsActive() then
-			debugPrint(5, `Player data found`)
-			local values = {}
-			for _, key in keys do
-				local value = getValue(playerCache, key, true):expect()
-				if isTable then
-					values[key] = value
-				else
-					values[#values + 1] = value
-				end
-			end
-			if isTable then
-				debugPrint(5, `Returning table`)
-				resolve(values)
-			else
-				debugPrint(5, `Returning tuple`)
-				resolve(table.unpack(values))
-			end
-		else
-			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player}.`)
+	return UserVaultServer.PerformTransaction(function(vault: VaultAccessor)
+		local values = {}
+		for _, key in keys do
+			local value = vault:GetValue(key)
+			values[if isTable then key else #values + 1] = value
 		end
-	end)
+		if isTable then
+			debugPrint(5, `Returning table`)
+			return values
+		else
+			debugPrint(5, `Returning tuple`)
+			return table.unpack(values)
+		end
+	end, player)
 end
 UserVaultServer.GetValues = UserVaultServer.GetValue
 
@@ -470,19 +600,9 @@ function UserVaultServer.SetValue(player: Player, key: string, value: any): Prom
 
 	debugPrint(2, `Setting value for {player} ({key} = {value})`)
 
-	return Promise.new(function(resolve, reject)
-		debugPrint(5, `Waiting for player data`)
-		waitForPlayerLoaded(player)
-
-		local playerCache = playerCaches[player]
-		if playerCache and playerCache.Profile:IsActive() then
-			debugPrint(5, `Player data found`)
-			resolve(setValue(playerCache, key, value))
-		else
-			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player}.`)
-		end
-	end)
+	return UserVaultServer.PerformTransaction(function(vault: VaultAccessor)
+		vault:SetValue(key, value)
+	end, player)
 end
 
 --[[
@@ -530,30 +650,18 @@ function UserVaultServer.UpdateValue(player: Player, key: string, callback: (val
 
 	debugPrint(2, `Updating value for {player} ({key})`)
 
-	return Promise.new(function(resolve, reject)
-		debugPrint(5, `Waiting for player data`)
-		waitForPlayerLoaded(player)
-
-		local playerCache = playerCaches[player]
-		if playerCache and playerCache.Profile:IsActive() then
-			debugPrint(5, `Player data found`)
-			resolve(getValue(playerCache, key, false)
-			:andThen(function(oldValue)
-				local newValue = assertNoYield(callback, oldValue)
-				if currentConfig.WarnNilUpdate and newValue == nil then
-					warn("UpdateValue callback returned a nil value\n", debug.traceback())
-				end
-				setValue(playerCache, key, newValue)
-				if typeof(newValue) == "table" then
-					newValue = TableUtil.Lock(TableUtil.Copy(newValue, true))
-				end
-				return newValue
-			end))
-		else
-			debugPrint(5, `Player data not found`)
-			reject(`Failed to retrieve profile for player {player}.`)
+	return UserVaultServer.PerformTransaction(function(vault: VaultAccessor)
+		local oldValue = vault:GetValue(key)
+		local newValue = callback(oldValue)
+		if currentConfig.WarnNilUpdate and newValue == nil then
+			warn("UpdateValue callback returned a nil value\n", debug.traceback())
 		end
-	end)
+		vault:SetValue(key, newValue)
+		if typeof(newValue) == "table" then
+			newValue = TableUtil.Copy(newValue, true)
+		end
+		return newValue
+	end, player)
 end
 
 --[[
