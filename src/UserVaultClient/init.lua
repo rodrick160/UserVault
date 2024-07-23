@@ -427,8 +427,10 @@ function UserVaultClient.Start(config: UserVaultConfig)
 
 	dataReadyValue = if currentConfig.UseFusion3 then Fusion3.Value(false) else Fusion2.Value(false)
 
+	local getPlayerData = userVaultComm:GetFunction("GetPlayerData")
+
 	debugPrint(1, `Retrieving player data`)
-	userVaultComm:GetFunction("GetPlayerData")()
+	getPlayerData()
 	:andThen(function(retrievedPlayerData)
 		data = retrievedPlayerData
 
@@ -456,6 +458,26 @@ function UserVaultClient.Start(config: UserVaultConfig)
 		dataReady = true
 		dataReadyValue:set(true)
 		dataReadySignal:Fire()
+	end)
+
+	debugPrint(1, `Verifying player data`)
+	Promise.delay(1)
+	:andThenCall(getPlayerData)
+	:andThen(function(retrievedPlayerData)
+		for key, newValue in retrievedPlayerData do
+			local oldValue = data[key]
+			if oldValue == newValue then continue end
+			debugPrint(1, `Player data changed: (index = {key}, newValue = {newValue})`)
+
+			data[key] = newValue
+			if dataStateValues[key] then
+				debugPrint(3, `Data state value updated`)
+				dataStateValues[key]:set(newValue)
+			end
+			if dataChangedSignals[key] then
+				dataChangedSignals[key]:Fire(newValue, oldValue)
+			end
+		end
 	end)
 end
 
