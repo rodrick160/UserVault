@@ -17,6 +17,11 @@
 
 local RunService = game:GetService("RunService")
 
+export type VaultAccessor = {
+	GetValue: (self: VaultAccessor, key: string) -> any,
+	SetValue: (self: VaultAccessor, key: string, value: any) -> (),
+}
+
 if RunService:IsServer() then
 	return require(script.UserVaultServer)
 else
