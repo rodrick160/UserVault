@@ -253,17 +253,13 @@ UserVaultClient.GetValues = UserVaultClient.GetValue
 	- `key: string` - The profile key to monitor for changes.
 
 	## Return Value
-	Returns a `Promise` that resolves with a `Signal` object.
-	The resolved signal can then be connected to functions that will be called with the new and previous values of the key whenever it changes.
+	Returns a `Signal` object that will fire with the new and previous values of the key whenever it changes.
 
 	## Usage Examples
 	```lua
-	UserVault.GetValueChangedSignal("Coins")
-	:andThen(function(signal)
-		signal:Connect(function(newValue, oldValue)
-			print(`Local player's coins changed from {oldValue} to {newValue}!`)
-		end)
-	end)
+	UserVault.GetValueChangedSignal("Coins"):Connect(function(newValue, oldValue)
+        print("Local player's coins changed from " .. oldValue .. " to " .. newValue)
+    end)
 	```
 
 	> [!NOTE]

@@ -111,23 +111,19 @@ end)
 ## GetValueChangedSignal
 
 ### Description
-Creates and returns a signal that is fired when a specified key's value changes in the client's profile.
+Creates and returns a [`Signal`](https://sleitnick.github.io/RbxUtil/api/Signal/) that is fired when a specified key's value changes in the client's profile.
 The signal passes the new and previous values of the observed key.
 
 ### Parameters
 - `key: string` - The profile key to monitor for changes.
 
 ### Return Value
-Returns a [`Promise`](https://eryn.io/roblox-lua-promise/api/Promise/) that resolves with a [`Signal`](https://sleitnick.github.io/RbxUtil/api/Signal/) object.
-The resolved signal can then be connected to functions that will be called with the new and previous values of the key whenever it changes.
+Returns a [`Signal`](https://sleitnick.github.io/RbxUtil/api/Signal/) object that will fire with the new and previous values of the key whenever it changes.
 
 ### Usage Examples
 ```lua
-UserVault.GetValueChangedSignal("Coins")
-:andThen(function(signal)
-	signal:Connect(function(newValue, oldValue)
-		print("Local player's coins changed from " .. oldValue .. " to " .. newValue)
-	end)
+UserVault.GetValueChangedSignal("Coins"):Connect(function(newValue, oldValue)
+	print("Local player's coins changed from " .. oldValue .. " to " .. newValue)
 end)
 ```
 

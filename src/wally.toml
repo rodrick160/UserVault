@@ -1,6 +1,6 @@
 [package]
 name = "rodrick160/uservault"
-version = "0.3.2"
+version = "0.3.3"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 private = false
