@@ -25,8 +25,7 @@ if not RunService:IsClient() then
 end
 
 local Comm = require(script.Parent.Parent.Comm).ClientComm
-local Fusion2 = require(script.Parent.Parent.Fusion2)
-local Fusion3 = require(script.Parent.Parent.Fusion3)
+local Fusion = require(script.Parent.Parent.Fusion)
 local Promise = require(script.Parent.Parent.Promise)
 local Signal = require(script.Parent.Parent.Signal)
 local TableUtil = require(script.Parent.Parent.TableUtil)
@@ -35,7 +34,6 @@ local TableUtil = require(script.Parent.Parent.TableUtil)
 
 local DEFAULT_CONFIG: UserVaultConfig = {
 	VerboseLevel = 0,
-	UseFusion3 = false,
 }
 
 --\\ Module //--
@@ -46,15 +44,12 @@ local UserVaultClient = {}
 
 type UserVaultConfig = {
 	VerboseLevel: number,
-	UseFusion3: boolean,
 }
 
-type Computed<T> = Fusion2.Computed<T> | Fusion3.Computed<T>
-type Value<T> = Fusion2.Value<T> | Fusion3.Value<T>
-
+type Computed<T> = Fusion.Computed<T>
 type Promise = typeof(Promise.new())
-
 type Signal = Signal.Signal
+type Value<T> = Fusion.Value<T, T>
 
 --\\ Private //--
 
@@ -73,6 +68,8 @@ local data = {}
 local dataStateValues = {}
 local dataStateComputeds = {}
 local started = false
+
+local globalScope = Fusion:scoped()
 
 local function debugPrint(level: number, ...: any...)
 	if level > currentConfig.VerboseLevel then return end
@@ -100,21 +97,21 @@ end
 --\\ Public //--
 
 --[[
-	# [GetState](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getstate)
+	## [GetState](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getstate)
 
-	## Description
+	### Description
 	Returns a read-only state object representing a value in the player's data profile.
 	The value of the state object is updated automatically.
 
-	## Parameters
+	### Parameters
 	- `key: string` - The key of the value to retrieve.
 	- `defaultValue: any` (optional) - A default value for the state object to resolve to.
 		This value will be used until the player profile has been loaded and received by the client, at which time the true value will take its place.
 
-	## Return Value
+	### Return Value
 	Returns a `Computed` state object from the [Fusion](https://elttob.uk/Fusion) library.
 
-	## Usage Examples
+	### Usage Examples
 	```lua
 		local coinsValue = UserVault.GetState("Coins", 0)
 		local coinsLabel = Fusion.New "TextLabel" {
@@ -125,10 +122,8 @@ end
 function UserVaultClient.GetState(key: string, defaultValue: any): Computed<any>
 	checkStarted()
 
-	local Value = if currentConfig.UseFusion3 then Fusion3.Value else Fusion2.Value
-
 	debugPrint(2, `Getting state (key = {key}, defaultValue = {defaultValue})`)
-	local value = dataStateValues[key] or Value(data[key])
+	local value = dataStateValues[key] or globalScope:Value(data[key])
 	dataStateValues[key] = value
 
 	if defaultValue == nil then
@@ -136,43 +131,27 @@ function UserVaultClient.GetState(key: string, defaultValue: any): Computed<any>
 		local computed = dataStateComputeds[key]
 		if not computed then
 			debugPrint(3, `Generating new Computed`)
-			if currentConfig.UseFusion3 then
-				debugPrint(3, `Generating Fusion 0.3 Computed`)
-				computed = Fusion3.Computed(function(use)
-					return use(value)
-				end)
-			else
-				debugPrint(3, `Generating Fusion 0.2 Computed`)
-				computed = Fusion2.Computed(function()
-					return value:get()
-				end)
-			end
+			computed = globalScope:Computed(function(use)
+				return use(value)
+			end)
 			dataStateComputeds[key] = computed
 		end
 		return computed
 	else
 		debugPrint(3, `Default value provided, generating new Computed`)
-		if currentConfig.UseFusion3 then
-			debugPrint(3, `Returning Fusion 0.3 Computed`)
-			return Fusion3.Computed(function(use)
-				return if use(dataReadyValue) then use(value) else defaultValue
-			end)
-		else
-			debugPrint(3, `Returning Fusion 0.2 Computed`)
-			return Fusion2.Computed(function()
-				return if dataReadyValue:get() then value:get() else defaultValue
-			end)
-		end
+		return globalScope:Computed(function(use)
+			return if use(dataReadyValue) then use(value) else defaultValue
+		end)
 	end
 end
 
 --[[
-	# [GetValue](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getvalue)
+	## [GetValue](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getvalue)
 
-	## Description
+	### Description
 	Retrieves specified values from the client's profile.
 
-	## Parameters
+	### Parameters
 	This function supports three parameter formats:
 
 	- `GetValue(keys: {string})`: Uses an array of keys to retrieve specific values.
@@ -183,14 +162,14 @@ end
 
 	- `GetValue()`: Does not retrieve any values, but can be used to check if the profile has loaded.
 
-	## Return Value
+	### Return Value
 	Returns a `Promise` that resolves with the requested values.
 	When `keys` is an array, the promise resolves with a dictionary mapping each key to its value.
 	When using varargs, the promise resolves with the values directly.
 
-	## Usage Examples
+	### Usage Examples
 
-	### Array Example
+	#### Array Example
 	Retrieve values using an array of keys `"Coins"` and `"Level"`.
 	The promise resolves with a dictionary containing the values for these keys.
 	```lua
@@ -199,7 +178,7 @@ end
 	end)
 	```
 
-	### Vararg Example
+	#### Vararg Example
 	Retrieve values using varargs `"Coins"` and `"Level"`.
 	The promise resolves with the values for these keys in order.
 	```lua
@@ -243,19 +222,19 @@ end
 UserVaultClient.GetValues = UserVaultClient.GetValue
 
 --[[
-	# [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getvaluechangedsignal)
+	## [GetValueChangedSignal](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getvaluechangedsignal)
 
-	## Description
+	### Description
 	Creates and returns a `Signal` that is fired when a specified key's value changes in the client's profile.
 	The signal passes the new and previous values of the observed key.
 
-	## Parameters
+	### Parameters
 	- `key: string` - The profile key to monitor for changes.
 
-	## Return Value
+	### Return Value
 	Returns a `Signal` object that will fire with the new and previous values of the key whenever it changes.
 
-	## Usage Examples
+	### Usage Examples
 	```lua
 	UserVault.GetValueChangedSignal("Coins"):Connect(function(newValue, oldValue)
         print("Local player's coins changed from " .. oldValue .. " to " .. newValue)
@@ -283,21 +262,21 @@ function UserVaultClient.GetValueChangedSignal(key: string): Signal
 end
 
 --[[
-	# [BindToValue](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#bindtovalue)
+	## [BindToValue](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#bindtovalue)
 
-	## Description
+	### Description
 	Invokes a callback function with the current value of a specified key immediately upon binding, and then again each time that key's value
 	updates in the client's profile.
 
-	## Parameters
+	### Parameters
 	- `key: string` - The key within the client's profile to watch for changes.
 	- `callback: (newValue: any, oldValue: any?) -> ()` - A callback function that is executed with the new value of the key and,
 		for updates after the initial call, the previous value. For the initial invocation, `oldValue` will not be provided.
 
-	## Return Value
+	### Return Value
 	Returns a `Promise` that resolves once the callback has been registered and invoked with the current value of the key.
 
-	## Usage Examples
+	### Usage Examples
 	```lua
 	-- Bind to monitor and reflect changes in 'Coins' in a `TextLabel`.
 	UserVault.BindToValue("Coins", function(newValue, oldValue)
@@ -327,9 +306,9 @@ function UserVaultClient.BindToValue(key: string, callback: (any) -> ())
 end
 
 --[[
-	# [DataReady](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#dataready)
+	## [DataReady](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#dataready)
 
-	## Description
+	### Description
 	Returns a boolean flag indicating if the client's data is ready for consumption.
 
 	> [!TIP]
@@ -343,9 +322,9 @@ function UserVaultClient.DataReady(): boolean
 end
 
 --[[
-	# [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
+	## [GetDataReadySignal](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#getdatareadysignal)
 
-	## Description
+	### Description
 	Returns a `Signal` which fires when the client's data becomes ready for consuption.
 
 	> [!WARNING]
@@ -357,13 +336,13 @@ function UserVaultClient.GetDataReadySignal(): Signal
 end
 
 --[[
-	# [Start](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#start)
+	## [Start](https://github.com/rodrick160/UserVault/blob/main/src/UserVaultClient/DOCUMENTATION.md#start)
 
-	## Description
+	### Description
 	Initializes UserVaultClient with the provided configuration. This function is essential for setting up the module's behavior according to your game's
 	needs and should be called once before starting Knit.
 
-	## Parameters
+	### Parameters
 	- `config: table` - Configuration options for UserVaultClient.
 		- `VerboseLevel: number` (optional) - Controls the level of debug information output by the module. Useful for debugging and monitoring module
 			operations.
@@ -371,14 +350,11 @@ end
 			- `1` - Logs updates to data, useful for tracking dynamic changes during development.
 			- `2` - Logs external data access, helping identify unexpected interactions.
 			- `3` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
-		- `UseFusion3: boolean` (optional) - Determines whether Fusion objects adhere to v0.3.0 (true) or default to v0.2.0 (false).
-			Choosing v0.3.0 may offer enhanced features or performance improvements tailored to specific project requirements.
 
-	## Usage Examples
+	### Usage Examples
 	```lua
 	UserVaultClient.Start({
 		VerboseLevel = 2,
-		UseFusion3 = true
 	})
 	```
 
@@ -386,12 +362,6 @@ end
 	> It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
 	> preventing dependency or initialization conflicts.
 	> This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
-
-	> [!IMPORTANT]
-	> If you are utilizing Fusion in your project, it's crucial to configure the UserVaultClient to use the same Fusion version as your project.
-	> This ensures compatibility and prevents issues related to version mismatches. Use the `UseFusion3` configuration option to specify whether
-	> Fusion v0.3.0 or an earlier version is in use. Failing to align the Fusion version used by UserVault with your project's Fusion version
-	> can lead to errors.
 ]]
 function UserVaultClient.Start(config: UserVaultConfig)
 	if started then
@@ -401,9 +371,6 @@ function UserVaultClient.Start(config: UserVaultConfig)
 		error("UserVaultClient.Start() must be given a config table.", 2)
 	elseif typeof(config) ~= "table" then
 		error("config must be a table.", 2)
-
-	elseif config.UseFusion3 ~= nil and typeof(config.UseFusion3) ~= "boolean" then
-		error("config.UseFusion3 must be nil or a boolean.", 2)
 
 	elseif config.VerboseLevel ~= nil then
 		if typeof(config.VerboseLevel) ~= "number" or
@@ -421,7 +388,7 @@ function UserVaultClient.Start(config: UserVaultConfig)
 	local userVaultComm = Comm.new(game.ReplicatedStorage, true, "UserVaultComm")
 	userVaultComm:BuildObject()
 
-	dataReadyValue = if currentConfig.UseFusion3 then Fusion3.Value(false) else Fusion2.Value(false)
+	dataReadyValue = globalScope:Value(false)
 
 	local getPlayerData = userVaultComm:GetFunction("GetPlayerData")
 

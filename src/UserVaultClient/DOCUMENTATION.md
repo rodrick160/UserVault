@@ -20,14 +20,11 @@ needs and should be called once before starting Knit.
 		- `1` - Logs updates to data, useful for tracking dynamic changes during development.
 		- `2` - Logs external data access, helping identify unexpected interactions.
 		- `3` - The most verbose level, logging all code paths taken within the module. Best used for troubleshooting specific issues.
-	- `UseFusion3: boolean` (optional) - Determines whether Fusion objects adhere to v0.3.0 (`true`) or default to v0.2.0 (`false`).
-		Choosing v0.3.0 may offer enhanced features or performance improvements tailored to specific project requirements.
 
 ### Usage Examples
 ```lua
 UserVaultClient.Start({
 	VerboseLevel = 2,
-	UseFusion3 = true
 })
 ```
 
@@ -35,12 +32,6 @@ UserVaultClient.Start({
 > It's critical to invoke `Start()` before initializing other modules, such as Knit, to ensure UserVault is fully configured and operational,
 > preventing dependency or initialization conflicts.
 > This order is crucial for maintaining a stable and predictable initialization sequence for your game's services.
-
-> [!IMPORTANT]
-> If you are utilizing Fusion in your project, it's crucial to configure the UserVaultClient to use the same Fusion version as your project.
-> This ensures compatibility and prevents issues related to version mismatches. Use the `UseFusion3` configuration option to specify whether
-> Fusion v0.3.0 or an earlier version is in use. Failing to align the Fusion version used by UserVault with your project's Fusion version
-> can lead to errors.
 
 ## GetState
 
@@ -58,8 +49,9 @@ Returns a `Computed` state object from the [Fusion](https://elttob.uk/Fusion) li
 
 ### Usage Examples
 ```lua
+	local scope = Fusion:scoped()
 	local coinsValue = UserVault.GetState("Coins", 0)
-	local coinsLabel = Fusion.New "TextLabel" {
+	local coinsLabel = scope:New "TextLabel" {
 		Text = coinsValue
 	}
 ```
