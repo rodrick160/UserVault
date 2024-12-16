@@ -28,6 +28,7 @@ local Promise = require(script.Parent.Parent.Promise)
 local Signal = require(script.Parent.Parent.Signal)
 local TableUtil = require(script.Parent.Parent.TableUtil)
 local Trove = require(script.Parent.Parent.Trove)
+local WaitFor = require(script.Parent.WaitFor)
 
 --\\ Constants //--
 
@@ -80,6 +81,7 @@ type Vault = {
 	SharedDataChangeQueue: {[string]: DataChange},
 	ServerDataChangeQueue: {[string]: DataChange},
 	Promise: Promise,
+	WaitFor: WaitFor,
 }
 
 type Profile = ProfileService.Profile<table>
@@ -87,6 +89,8 @@ type ProfileStore = ProfileService.ProfileStore
 
 type Promise = typeof(Promise.new())
 type Signal = Signal.Signal
+
+type WaitFor = WaitFor.WaitFor
 
 --\\ Private //--
 
@@ -272,6 +276,7 @@ local function createVault(player: Player): Vault
 		Data = TableUtil.Copy(playerCache.Profile.Data, true),
 		SharedDataChangeQueue = {},
 		ServerDataChangeQueue = {},
+		WaitFor = WaitFor.new(true),
 	}
 
 	local vaultAccessor: VaultAccessor = {_locked = false}
@@ -413,7 +418,7 @@ function UserVaultServer.PerformTransaction(callback: (...VaultAccessor) -> (), 
 
 			if vault.Cache.ActiveVault then
 				debugPrint(5, `Waiting for existing vault promise to finish`)
-				vault.Cache.ActiveVault.Promise:await()
+				vault.Cache.ActiveVault.WaitFor:Await()
 			end
 			vault.Cache.ActiveVault = vault
 
@@ -431,7 +436,6 @@ function UserVaultServer.PerformTransaction(callback: (...VaultAccessor) -> (), 
 				debugPrint(5, `Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
 				return Promise.reject(`Profile for player {vault.Cache.Player} was closed before transaction concluded.`)
 			end
-			vault.Promise = promise
 			vaultAccessors[i] = vault.Accessor
 		end
 
@@ -471,11 +475,16 @@ function UserVaultServer.PerformTransaction(callback: (...VaultAccessor) -> (), 
 		return result
 	end)
 
+	Promise.each(vaultPromises, function(vault: Vault)
+		vault.Promise = promise
+	end)
+
 	promise
 	:finally(function()
 		debugPrint(5, `Locking and releasing vaults`)
 		Promise.each(vaultPromises, function(vault: Vault)
 			vault.Accessor._locked = true
+			vault.WaitFor:Clear()
 		end)
 		for _, player in players do
 			if not playerCaches[player] then continue end
